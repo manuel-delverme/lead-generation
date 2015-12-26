@@ -1,9 +1,9 @@
 import scrapy
 import keywords
 
-class BlogSpider(scrapy.Spider):
-    name = 'blogspider'
-    start_urls = ['http://blog.scrapinghub.com']
+class Spider(scrapy.Spider):
+    name = 'contacts'
+    start_urls = ['http://www.dmoz.org/']
 
     def parse(self, response):
         for url in response.css('ul li a::attr("href")').re(r'.*/\d\d\d\d/\d\d/$'):
