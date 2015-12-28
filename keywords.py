@@ -6,14 +6,21 @@ import json
 import shelve
 import collections
 
+FREQFILE = "enwiki-20150602-words-frequency.txt"
+
 class Classifier(object):
     def __init__(self):
-        self.wordfreqs = shelve.open("/tmp/wordfreq", flag="n")
+        global FREQFILE
+        self.wordfreqs = shelve.open("/tmp/wordfreq", flag="c")
+        if '__filename__' not in self.wordfreqs or self.wordfreqs['__filename__'] != FREQFILE:
+            self.wordfreqs.close()
+            self.wordfreqs = shelve.open("/tmp/wordfreq", flag="n")
+
         self.stemmer = PorterStemmer()
         self.stopwords = set(nltk.corpus.stopwords.words('italian'))
         self.stopwords.union(nltk.corpus.stopwords.words('english'))
 
-        with open("enwiki-20150602-words-frequency.txt") as f:
+        with open(FREQFILE) as f:
             for wordfreq in f:
                 key, freq = wordfreq[:-1].split()
                 if(is_unicode(key)):
