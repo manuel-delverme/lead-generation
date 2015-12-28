@@ -1,0 +1,38 @@
+Keyword Extractor:
+  or keyword assignment?
+  or keyword extractor AND assignment later?
+
+
+Sources:
+meta-description
+meta-description
+meta-somethingelse?
+
+fulltext-corpora (from homepage)
+
+pre-processing:
+
+dataset-inflation:
+  synonims from wordnet(http://wordnet.princeton.edu/)
+  wikipedia related pages
+  linked-data (wikidb or dbwiki?)
+
+processing:
+
+rake to get the most important sentences
+  doesn't work with short text
+tf-idf https://en.wikipedia.org/wiki/Tf%E2%80%93idf
+  doesn't work with unknown terms
+  should log be used?
+  
+wikipedia is not a good baseline, build one from total data?
+  
+processing2:
+similarity clustering based on processing above ?
+
+
+fuck everything and use machine learning?
+
+
+https://en.wikipedia.org/wiki/Keyword_extraction
+https://github.com/charlieg/A-Smattering-of-NLP-in-Python
