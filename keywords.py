@@ -5,10 +5,11 @@ import sys
 import json
 import shelve
 import collections
+import RAKE
 
 FREQFILE = "enwiki-20150602-words-frequency.txt"
 
-class Classifier(object):
+class baseClassifier(object):
     def __init__(self):
         global FREQFILE
         self.wordfreqs = shelve.open("/tmp/wordfreq", flag="c")
@@ -80,7 +81,9 @@ def is_unicode(word):
         return True
 
 if __name__ == '__main__':
-    c = Classifier()
+    Rake = RAKE.Rake("SmartStoplist.txt");
+    print "loaded"
+    c = baseClassifier()
     with open(sys.argv[1]) as f:
         for row in f:
             row = json.loads(row)
@@ -89,7 +92,11 @@ if __name__ == '__main__':
             if(is_unicode(text)):
                 continue
             text = text.decode('utf8')
+            for keyword in Rake.run(text):
+                print keyword
             print "target:", classification
             for keyword,value in c.extract_keywords(text).items():
                 print keyword, value
+            print text, "$"
+
             raw_input()
