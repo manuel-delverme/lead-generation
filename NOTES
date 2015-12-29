@@ -1,14 +1,14 @@
-Scraper:
+spider:
   https://www.crunchbase.com/funding-rounds
-  https://angel.co/
-  
+  https://angel.co/europe/investors
+  http://www.ice.gov.it/
+  pagine gialle
 
 Keyword Extractor:
   or keyword assignment?
   or keyword extractor AND assignment later?
 
-
-Sources:
+data-Sources:
 meta-description
 meta-description
 meta-somethingelse?
@@ -36,16 +36,14 @@ wikipedia is not a good baseline, build one from total data?
 processing2:
 similarity clustering based on processing above ?
 
-
-datastore:
+datastorage:
   psql
   
 high level processing (ceo-ceo stuff)
   later..
-  
+
 sort result based on everything:
   random() for now
-
 
 https://en.wikipedia.org/wiki/Keyword_extraction
 https://github.com/charlieg/A-Smattering-of-NLP-in-Python
