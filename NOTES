@@ -1,3 +1,8 @@
+Scraper:
+  https://www.crunchbase.com/funding-rounds
+  https://angel.co/
+  
+
 Keyword Extractor:
   or keyword assignment?
   or keyword extractor AND assignment later?
@@ -16,6 +21,7 @@ dataset-inflation:
   synonims from wordnet(http://wordnet.princeton.edu/)
   wikipedia related pages
   linked-data (wikidb or dbwiki?)
+  http://multiwordnet.fbk.eu/english/mwndump.php
 
 processing:
 
@@ -31,7 +37,14 @@ processing2:
 similarity clustering based on processing above ?
 
 
-fuck everything and use machine learning?
+datastore:
+  psql
+  
+high level processing (ceo-ceo stuff)
+  later..
+  
+sort result based on everything:
+  random() for now
 
 
 https://en.wikipedia.org/wiki/Keyword_extraction
