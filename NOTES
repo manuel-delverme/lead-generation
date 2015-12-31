@@ -1,9 +1,14 @@
+spider:
+  https://www.crunchbase.com/funding-rounds
+  https://angel.co/europe/investors
+  http://www.ice.gov.it/
+  pagine gialle
+
 Keyword Extractor:
   or keyword assignment?
   or keyword extractor AND assignment later?
 
-
-Sources:
+data-Sources:
 meta-description
 meta-description
 meta-somethingelse?
@@ -16,6 +21,7 @@ dataset-inflation:
   synonims from wordnet(http://wordnet.princeton.edu/)
   wikipedia related pages
   linked-data (wikidb or dbwiki?)
+  http://multiwordnet.fbk.eu/english/mwndump.php
 
 processing:
 
@@ -30,9 +36,14 @@ wikipedia is not a good baseline, build one from total data?
 processing2:
 similarity clustering based on processing above ?
 
+datastorage:
+  psql
+  
+high level processing (ceo-ceo stuff)
+  later..
 
-fuck everything and use machine learning?
-
+sort result based on everything:
+  random() for now
 
 https://en.wikipedia.org/wiki/Keyword_extraction
 https://github.com/charlieg/A-Smattering-of-NLP-in-Python
