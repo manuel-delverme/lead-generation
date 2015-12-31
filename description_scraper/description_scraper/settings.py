@@ -83,3 +83,12 @@ AUTOTHROTTLE_MAX_DELAY=60
 #HTTPCACHE_DIR='httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES=[]
 #HTTPCACHE_STORAGE='scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+DATABASE = {
+    'drivername': 'postgres',
+    'host': 'localhost',
+    'port': '5432',
+    'username': 'spider',
+    'password': 'write_only',
+    'database': 'grepr'
+}
