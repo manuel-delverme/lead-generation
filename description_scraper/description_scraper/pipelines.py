@@ -7,9 +7,10 @@
 
 from scrapy import signals
 from scrapy.exporters import JsonLinesItemExporter
+from sqlalchemy.orm import sessionmaker
+from models import BusinessEntry, db_connect, create_businesses_table
 
 class JsonWriterPipeline(object):
-
     def __init__(self):
         self.files = {}
 
@@ -33,4 +34,25 @@ class JsonWriterPipeline(object):
 
     def process_item(self, item, spider):
         self.exporter.export_item(item)
+        return item
+
+class DatabasePipeline(object):
+    def __init__(self):
+        engine = db_connect()
+        create_businesses_table(engine)
+        self.Session = sessionmaker(bind=engine)
+
+    def process_item(self, item, spider):
+        session = self.Session()
+        business = BusinessEntry(**item)
+
+        try:
+            session.add(business)
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
         return item

@@ -7,10 +7,12 @@ import shelve
 import math
 import collections
 import RAKE
+import models
+import sqlalchemy
 
 FREQFILE = "wikipedia-word-frequency/it-wiki-freq.txt"
 
-class baseClassifier(object):
+class bagOfWordsClassifier(object):
     def __init__(self):
         global FREQFILE
         self.wordfreqs = shelve.open("/tmp/wordfreq", flag="c")
@@ -87,26 +89,33 @@ def is_unicode(word):
         return True
 
 if __name__ == '__main__':
+
     Rake = RAKE.Rake("SmartStoplist.txt");
-    c = baseClassifier()
+    bagc = bagOfWordsClassifier()
+
     print "loaded"
-    with open(sys.argv[1]) as f:
-        for row in f:
-            row = json.loads(row)
-            classification = row['dmoz_url'].split("/")[5:]
-            text = " ".join(row['metadata'])
-            if(is_unicode(text)):
+
+    engine = models.db_connect()
+    with engine.connect() as conn:
+        for row in conn.execute('select * from "Businesses"'):
+            target_result = row['referrer'].split("/")[5:]
+            base_text = " ".join(json.loads(row['meta_description']))
+            if(is_unicode(base_text)):
                 continue
-            text = text.decode('utf8')
-            #for keyword in Rake.run(text):
-            #    print keyword
-            print "target:", classification
-            for keyword,value in c.extract_keywords(text).items():
-                print keyword, value
-            for keyword in c.pos_tag(text):
-                if keyword[0] not in c.stopwords:
-                    if 'NN' == keyword[1]:
-                        print keyword
-            print text, "$"
+            base_text = base_text.decode('utf8')
+
+            print "target:", target_result
+            if "[]" != row['meta_keywords']:
+                print "keywords:"
+                keywords = set([k.lower().strip() for k in ",".join(json.loads(row['meta_keywords'])).split(",")])
+                for keyword in keywords:
+                    print keyword
+            else:
+                pos_tagged = bagc.pos_tag(base_text)
+                for keyword,value in bagc.extract_keywords(base_text).items():
+                    for tag in pos_tagged:
+                        if tag[0] == keyword and 'NN' in tag[1]:
+                            print keyword, value, tag[1]
+            print base_text, "$"
 
             raw_input()

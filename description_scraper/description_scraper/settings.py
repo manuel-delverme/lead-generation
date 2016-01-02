@@ -62,7 +62,7 @@ USER_AGENT = 'explorer (+http://www.world.com)'
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'description_scraper.pipelines.JsonWriterPipeline': 300,
+    'description_scraper.pipelines.DatabasePipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

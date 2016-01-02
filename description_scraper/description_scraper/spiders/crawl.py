@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import scrapy
+import json
 import scrapy.loader
 from description_scraper.items import Business
 
@@ -29,7 +30,10 @@ class CrawlSpider(scrapy.Spider):
 
     def parse_homepage(self, response):
         item = Business()
+        item['title'] = json.dumps(response.xpath("//title/text()").extract())
         item['homepage'] = response.url
+        item['meta_description'] = json.dumps(response.xpath("//meta[@name='description']/@content").extract())
+        item['meta_keywords'] = json.dumps(response.xpath("//meta[@name='keywords']/@content").extract())
+        item['page_text'] = "" #  not used for now
         item['dmoz_url'] = response.meta['dmoz_url']
-        item['metadata'] = response.xpath("//meta[@name='description']/@content").extract()
         yield item
