@@ -1,4 +1,5 @@
 from nltk.stem.porter import PorterStemmer
+from models import SearchEntry
 import string
 import nltk
 import sys
@@ -88,34 +89,45 @@ def is_unicode(word):
     except UnicodeEncodeError:
         return True
 
+def process(Rake, bagc, data):
+    bag_of_words = ".\n ".join(json.loads(data['meta_description']))
+    meta_keywords = json.loads(data['meta_keywords'])
+
+    if(is_unicode(bag_of_words)):
+        return []
+    bag_of_words = bag_of_words.decode('utf8')
+
+    if len(meta_keywords) > 0:
+        keywords = ",".join(json.loads(meta_keywords)).split(",")
+    else:
+        pos_tagged = bagc.pos_tag(bag_of_words)
+        #for keyword,value in bagc.extract_keywords(bag_of_words).items():
+        keywords = set([tag[0] for tag in pos_tagged if 'NN' in tag[1]])
+    keywords = set([k.lower().strip() for k in keywords])
+    return keywords
+
 if __name__ == '__main__':
 
-    Rake = RAKE.Rake("SmartStoplist.txt");
+    #Rake = RAKE.Rake("SmartStoplist.txt");
     bagc = bagOfWordsClassifier()
 
     print "loaded"
 
     engine = models.db_connect()
-    with engine.connect() as conn:
-        for row in conn.execute('select * from "Businesses"'):
-            target_result = row['referrer'].split("/")[5:]
-            base_text = " ".join(json.loads(row['meta_description']))
-            if(is_unicode(base_text)):
-                continue
-            base_text = base_text.decode('utf8')
+    with sqlalchemy.orm.sessionmaker(engine=engine) as session:
+        with engine.connect() as conn:
+            for business in conn.execute('select * from "Businesses"'):
+                target_result = business['referrer'].split("/")[5:]
+                print "target:", target_result
+                keywords = process(bagc, base_text, business)
 
-            print "target:", target_result
-            if "[]" != row['meta_keywords']:
-                print "keywords:"
-                keywords = set([k.lower().strip() for k in ",".join(json.loads(row['meta_keywords'])).split(",")])
                 for keyword in keywords:
-                    print keyword
-            else:
-                pos_tagged = bagc.pos_tag(base_text)
-                for keyword,value in bagc.extract_keywords(base_text).items():
-                    for tag in pos_tagged:
-                        if tag[0] == keyword and 'NN' in tag[1]:
-                            print keyword, value, tag[1]
+                    searchEntry = SearchEntry(business=business, keyword=keyword)
+                    session.add(searchEntry)
+                try:
+                    session.commit()
+                except:
+                    session.rollback()
+                    raise
             print base_text, "$"
-
             raw_input()

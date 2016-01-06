@@ -1,4 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
 import datetime
@@ -33,3 +35,11 @@ class BusinessEntry(DeclarativeBase):
     page_text = Column('page_text', String, nullable=True)
     dmoz_url = Column('referrer', String, nullable=True)
     crawl_time = Column('crawl_time', DateTime, default=datetime.datetime.utcnow)
+
+class SearchEntry(DeclarativeBase):
+    """Sqlalchemy entry model"""
+    __tablename__ = "SearchRelation"
+
+    business_id = Column(Integer, ForeignKey("Businesses.id"))
+    business = relationship("BusinessEntry")
+    keyword = Column("keyword", String)
