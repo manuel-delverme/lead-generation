@@ -61,4 +61,5 @@ target/
 *frequency.txt
 description_scraper/crawl_data.jsonlines
 wikipedia-word-frequency
-*/data/
+data/
+.idea/
