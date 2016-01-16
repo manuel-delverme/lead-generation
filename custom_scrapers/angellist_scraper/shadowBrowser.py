@@ -1,13 +1,8 @@
 from __future__ import print_function
-from urllib2 import HTTPError
-from random import gauss
-from time import sleep
 import mechanize as m
-import sys,re,base64
 
 class ShadowBrowser:
-
-    """ 
+    """
         basic browser class which handles gets and posts
         the poit here is to minimize our signature to avoid detection
     """
@@ -25,5 +20,8 @@ class ShadowBrowser:
         #TODO fetch random user agent here
         self.br.addheaders = [('User-agent','Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36')]
 
-    def open(*args):
-        return self.br.open(args)
+    def open(self, url):
+        return self.br.open(url, timeout=10)
+
+    def get_response(self):
+        return self.br.response()
