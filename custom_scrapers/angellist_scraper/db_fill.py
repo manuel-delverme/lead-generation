@@ -78,19 +78,21 @@ with _conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
     cursor.execute('select * from "Businesses" where angel_id is not NULL and crawl_time is NULL')
     for row in cursor:
         # url = url[:4] + url[5:]
-        data = parse(target_url=row['angel_link'])
-        data['id'] = row['id']
-        sql_str = """
-          UPDATE "Businesses"
-          SET homepage=%(homepage)s,
-              meta_description=%(meta_description)s,
-              meta_keywords=%(meta_keys)s,
-              common_name=%(common_name)s,
-              funding=%(total_funding)s
-          WHERE
-            id = %(id)s
-        """
-        print data
-        with _conn.cursor() as cur2:
-            cur2.execute(sql_str, data)
+        if None in (row['homepage'], row['meta_description'], row['meta_keywords'], row['common_name'], row['funding']):
+
+            data = parse(target_url=row['angel_link'])
+            data['id'] = row['id']
+            sql_str = """
+              UPDATE "Businesses"
+              SET homepage=%(homepage)s,
+                  meta_description=%(meta_description)s,
+                  meta_keywords=%(meta_keys)s,
+                  common_name=%(common_name)s,
+                  funding=%(total_funding)s
+              WHERE
+                id = %(id)s
+            """
+            print data
+            with _conn.cursor() as cur2:
+                cur2.execute(sql_str, data)
 
