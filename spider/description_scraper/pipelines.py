@@ -8,7 +8,7 @@
 from scrapy import signals
 from scrapy.exporters import JsonLinesItemExporter
 from sqlalchemy.orm import sessionmaker
-from models import BusinessEntry, db_connect, create_business_table
+from models import BusinessEntry, db_connect, create_businesses_table
 
 class JsonWriterPipeline(object):
     def __init__(self):

@@ -25,13 +25,21 @@ headers = {
 
 with open("data/ids.uniq") as ids_file:
 
-    for _ in range(40): next(ids_file)
+    for _ in range(9200):
+        next(ids_file)
+
+    for id_file in ids_file:
+        if id_file == '37320\n':
+            break
 
     for id_ in ids_file:
         url = "https://angel.co/follows/tooltip?type=Startup&id={}".format(id_)
         response = requests.get(url, headers=headers, cookies=cookies)
-        name = BeautifulSoup(response.text, 'html.parser').select('.startup-link')[0]['href'].split("/")[-1]
-        with open("data/angel.co/{}".format(name), "a") as dump:
-            print(name)
-            dump.write(response.text)
-        time.sleep(1)
+        try:
+            name = BeautifulSoup(response.text, 'html.parser').select('.startup-link')[0]['href'].split("/")[-1]
+            with open("data/angel.co/{}".format(name), "a") as dump:
+                print(name)
+                dump.write(response.text)
+            time.sleep(1)
+        except:
+            raise Exception(id_)
