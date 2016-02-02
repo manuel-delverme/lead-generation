@@ -1,6 +1,6 @@
 spider:
-  https://www.crunchbase.com/funding-rounds
-  https://angel.co/europe/investors
+  #https://www.crunchbase.com/funding-rounds
+  #https://angel.co/europe/investors
   http://www.ice.gov.it/
   pagine gialle
 
@@ -47,3 +47,8 @@ sort result based on everything:
 
 https://en.wikipedia.org/wiki/Keyword_extraction
 https://github.com/charlieg/A-Smattering-of-NLP-in-Python
+
+pagine-gialle:
+
+curl 'http://www.paginegialle.it/ricerca/srl/p-2?mr=50' 
+parse robots.txt
