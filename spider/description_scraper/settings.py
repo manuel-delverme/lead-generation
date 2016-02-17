@@ -84,9 +84,12 @@ AUTOTHROTTLE_MAX_DELAY=60
 #HTTPCACHE_IGNORE_HTTP_CODES=[]
 #HTTPCACHE_STORAGE='scrapy.extensions.httpcache.FilesystemCacheStorage'
 
+DOWNLOAD_HANDLERS: {'s3': None}
+
+
 DATABASE = {
     'drivername': 'postgres',
-    'host': 'localhost',
+    'host': 'tuamadre.net',
     'port': '5432',
     'username': 'spider',
     'password': 'write_only',

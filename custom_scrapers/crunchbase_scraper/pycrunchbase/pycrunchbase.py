@@ -188,7 +188,7 @@ class CrunchBase(object):
             items, control = data['items'], data['paging']
             if control['next_page_url'] is None or len(items) == 0:
                 raise StopIteration
-            print(page, len(items), (page*80.0)/control['total_items'])
+            print(page, len(items), (page*100.0)/control['total_items'])
             yield from items
 
     def _page(self, name, url):

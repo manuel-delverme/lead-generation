@@ -4,8 +4,7 @@ from pycrunchbase import CrunchBase
 import json
 import time
 cb = CrunchBase("4b9035bdef127369659d0562c70ff426")
-"""
-for funding_round in cb.funding_rounds(starting_page=1482): #1...x 10....850 done
+for funding_round in cb.funding_rounds(starting_page=1164):
     time.sleep(0.03)
     with open("data/{}".format(funding_round['uuid']), "w") as dump:
         json.dump(funding_round, dump)
@@ -35,3 +34,4 @@ headers = {
     'Connection': 'keep-alive',
 }
 response = requests.get('https://www.crunchbase.com/funding-round/000066459ef68958129a2e225e577eb8', headers=headers, cookies=cookies)
+"""

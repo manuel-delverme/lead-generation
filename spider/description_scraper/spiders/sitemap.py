@@ -10,10 +10,12 @@ from scrapy.spiders import SitemapSpider
 
 
 class PagineSpider(SitemapSpider):
-    sitemap_urls = ['http://www.paginegialle.it/sitemap.xml']
+    sitemap_urls = ["http://www.paginegialle.it/sitemap.xml"]
     name = "sitemap_spider"
 
     def parse(self, response):
+        from scrapy.shell import inspect_response
+        inspect_response(response, self)
         extractor = MicrodataExtractor()
         items = extractor.extract(response.body_as_unicode(), response.url)['items']
 
