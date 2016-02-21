@@ -10,7 +10,7 @@ from scrapy.spiders import SitemapSpider
 
 
 class PagineSpider(SitemapSpider):
-    sitemap_urls = ["http://www.paginegialle.it/sitemap.xml"]
+    sitemap_urls = ["http://www.paginegialle.it/sitemap_schedeazienda_87.xml.gz"]#["http://www.paginegialle.it/sitemap.xml"]
     name = "sitemap_spider"
 
     def parse(self, response):
@@ -18,14 +18,17 @@ class PagineSpider(SitemapSpider):
         inspect_response(response, self)
         extractor = MicrodataExtractor()
         items = extractor.extract(response.body_as_unicode(), response.url)['items']
+        print items
 
         descriptions = response.xpath("//meta[@name='description']/@content").extract() + response.xpath("//meta[@property='og:description']/@content").extract()
+        print descriptions
         request = scrapy.Request(url, callback=self.parse_homepage)
         request.meta['pg_description'] = descriptions
         request.meta['pg_keywords'] = response.xpath("//meta[@name='keywords']/@content").extract()
         request.meta['pg_title'] = response.xpath("//meta[@property='og:title']/@content").extract()
         request.meta['microdata'] = items
         request.meta['referrer'] =  response.url
+        print request.meta
         yield request
 
     def parse_homepage(self, response):
@@ -48,4 +51,5 @@ class PagineSpider(SitemapSpider):
         item['page_text'] = "" #  not used for now
         item['referrer'] = referrer
         item['microdata'] = referrer
+        print item
         yield item
