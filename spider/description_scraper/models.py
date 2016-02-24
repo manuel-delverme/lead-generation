@@ -1,17 +1,14 @@
+# DB interface
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
+
 import datetime
-
-
 import settings
-
 
 DeclarativeBase = declarative_base()
 
-
 def create_businesses_table(engine):
-    """"""
     DeclarativeBase.metadata.create_all(engine)
 
 def db_connect():

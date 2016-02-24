@@ -19,7 +19,7 @@ NEWSPIDER_MODULE = 'description_scraper.spiders'
 USER_AGENT = 'explorer (+http://www.world.com)'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS=32
+CONCURRENT_REQUESTS=1
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
@@ -50,7 +50,11 @@ CONCURRENT_REQUESTS_PER_IP=1
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'description_scraper.middlewares.RetryChangeProxyMiddleware': 600,
+    'description_scraper.middlewares.InterceptMetaRefreshMiddleware': 580,
+    'description_scraper.middlewares.InterceptRedirectMiddleware': 600,
+
+    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': None,
+    'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': None,
 }
 
 # Enable or disable extensions
@@ -85,6 +89,9 @@ AUTOTHROTTLE_MAX_DELAY=60
 #HTTPCACHE_STORAGE='scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 DOWNLOAD_HANDLERS={'s3': None}
+DUPEFILTER_DEBUG=True
+TOR_PASSWORD="howdoicake?"
+LOG_LEVEL="DEBUG"
 
 
 DATABASE = {
