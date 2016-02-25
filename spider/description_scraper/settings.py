@@ -16,7 +16,7 @@ NEWSPIDER_MODULE = 'description_scraper.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'explorer (+http://www.world.com)'
+USER_AGENT = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36' 
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS=1
@@ -24,22 +24,25 @@ CONCURRENT_REQUESTS=1
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY=1
+DOWNLOAD_DELAY=60
+
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN=16
-CONCURRENT_REQUESTS_PER_IP=1
+CONCURRENT_REQUESTS_PER_DOMAIN=1
+#CONCURRENT_REQUESTS_PER_IP=1
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED=False
+COOKIES_ENABLED=False
+#COOKIES_DEBUG=True
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED=False
 
 # Override the default request headers:
-#DEFAULT_REQUEST_HEADERS = {
-#   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-#   'Accept-Language': 'en',
-#}
+DEFAULT_REQUEST_HEADERS = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'fr,it;q=0.8,fr-FR;q=0.6',
+    'Accept-Encoding': 'gzip, deflate, sdch'
+}
 
 # Enable or disable spider middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
@@ -52,6 +55,7 @@ CONCURRENT_REQUESTS_PER_IP=1
 DOWNLOADER_MIDDLEWARES = {
     'description_scraper.middlewares.InterceptMetaRefreshMiddleware': 580,
     'description_scraper.middlewares.InterceptRedirectMiddleware': 600,
+    'description_scraper.middlewares.InterceptDownloadMiddleware': 950,
 
     'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': None,
     'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': None,

@@ -22,9 +22,9 @@ def change_tor_ip():
 
 class InterceptRedirectMiddleware(RedirectMiddleware):
     def process_response(self, request, response, spider):
-        if "captcha" in request.url:
+        if "captcha" in response.url:
             import ipdb;ipdb.set_trace()
-
+            #TODO this part is not tested
             change_tor_ip()
             redirected = request.replace(url=request.referrer)
             return self._redirect(redirected, request, spider, "captcha")
@@ -34,15 +34,26 @@ class InterceptRedirectMiddleware(RedirectMiddleware):
 
 class InterceptMetaRefreshMiddleware(MetaRefreshMiddleware):
     def process_response(self, request, response, spider):
-        _, refresh_url = scrapy.utils.response.get_meta_refresh(response)
-        if refresh_url is not None and "captcha" in refresh_url:
-            import ipdb;ipdb.set_trace()
-
-            change_tor_ip()
-            return self._redirect(request, request, spider, "captcha")
+        try:
+            _, refresh_url = scrapy.utils.response.get_meta_refresh(response)
+        except AttributeError as e:
+            if e.message == "'Response' object has no attribute 'body_as_unicode'":
+                return response
+        else:
+            if refresh_url is not None and "captcha" in refresh_url:
+                import ipdb;ipdb.set_trace()
+                change_tor_ip()
+                return self._redirect(request, request, spider, "captcha")
 
         # TODO fallback to old middleware
         return response
+
+class InterceptDownloadMiddleware(object):
+    def process_request(self, request, spider):
+        import ipdb;ipdb.set_trace()
+        if hasattr(spider, 'cookies') and hasattr(spider, 'headers'):
+            request = request.replace(cookies=spider.cookies, headers=spider.headers)
+            return request
 
 #class ProxyMiddleware(object):
 #    def process_request(self, request, spider):
