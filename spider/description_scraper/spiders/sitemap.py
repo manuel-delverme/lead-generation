@@ -10,54 +10,39 @@ from scrapy.spiders import SitemapSpider
 
 
 class PagineSpider(SitemapSpider):
-    sitemap_urls = ["http://www.paginegialle.it/sitemap_schedeazienda_86.xml.gz"]
+    sitemap_urls = [
+            "http://www.paginegialle.it/sitemap_schedeazienda_86.xml.gz",
+            ]
+    # sitemap_urls = ["http://localhost/sitemap_schedeazienda_86.xml.gz"]
     name = "sitemap_spider"
-    handle_httpstatus_list = [200, 416]
+    handle_httpstatus_list = [200]
 
     def __init__(self, *a, **kw):
         super(PagineSpider, self).__init__(*a, **kw)
 
-        self.cookies = {
-            'kpi': 'a354772a.52c858a6999a2',
-            'iqhx': '5fcd55b6-a19a-4db5-9c72-00064c56336a',
-            'sessionid': '3494561334330966717',
-            'pgz': 'ODQ1ODg7VG9yaW5vO1RPOzkx',
-            'listPositionUrlForCookie': '',
-            'refererShiny': '',
-            'priorityShiny': '',
-            'argo': '',
-            'D_SID': '93.49.205.65:OApKnFvt96qR1lfAuXnPLycIdjGfdhzvZMnouqDAjz0',
-            'lst': '',
-            'cookieClosed': 'ON',
-            'idAdvertiser': '46616',
-            'whereClosed': 'home',
-            'cp_acc': '1',
-            's_cc': 'true',
-            'D_PID': '12B067DE-9F41-3610-85EC-D3FD7CFDD7F1',
-            'D_IID': '6731853A-C865-3D36-9378-807F0AE9E6B5',
-            'D_UID': 'E7D56644-BBD9-32D2-92CF-3EF86D72B3DE',
-            'D_HID': 'lItTCJPowR66+sL60XNH/Xb35a9/oKcrlCCH+7s574g',
-            '_ga': 'GA1.2.1126327956.1456326954',
-            's_fid': '4B18C76ABC0CC80C-168E846D059AB94E',
-            's_lv': '1456412467595',
-            's_lv_s': 'Less%20than%201%20day',
-            's_nr': '1456412467598-Repeat',
-            'gpv_p24': 'PGIT%3AVhr%3AGuide%3ATorino%3AAlberg',
-            's_sq': 'seatpgpgitprod%2Cseatpgglobalprod%3D%2526pid%253DPGIT%25253AVhr%25253AGuide%25253ATorino%25253AAlberg%2526pidt%253D1%2526oid%253Dhttp%25253A%25252F%25252Fwww.paginegialle.it%25252Farthotelolympictorino%2526ot%253DA',
-        }
-        self.headers = {
-            'DNT': '1',
-            'Accept-Encoding': 'gzip, deflate, sdch',
-            'Accept-Language': 'en-US,en;q=0.8,it;q=0.6',
-            'Upgrade-Insecure-Requests': '1',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Cache-Control': 'max-age=0',
-            'Connection': 'keep-alive',
+        self.default_cookies = {
+            'pgz' : 'ODQ1ODg7VG9yaW5vO1RPOzkx',
+            'D_SID':'93.50.188.12:FlUBu8vxe8ZJZDpu9HZjfXDrt9BiHIK/1PMtrtbkp2g;',
+            '__rtgxg':'105DE627-354E-0001-3980-901019181DAD',
+            '__rtgxh':'1455578137279$1455578132157$2',
+            'kpi':'a98f9c65.52bd7386663c3',
+            'sessionid':'8239027420012864366',
+            'cp_acc':'1',
+            's_cc':'true',
+            's_fid':'7776CF06BE4467FF-0CF170173F114E17',
+            's_lv':'1456255426652',
+            's_nr':'1456255426654-Repeat',
+            's_sq':'%5B%5BB%5D%5D',
+            'D_PID':'C7A9E137-DBE9-34C8-9F83-E2C9DF26D3AC',
+            'D_IID':'4256BE7B-BD96-36E6-ADCB-C5B66C6C4C48',
+            'D_UID':'E68418E7-5E3D-3A81-884F-3EB9779ADDA1',
+            'D_HID':'BTm//sv2uLSoVxQkw4Y63aDLfrhLEYHki6z6kM4t23U',
         }
 
     def parse(self, response):
         import ipdb;ipdb.set_trace()
+        if response.url == "http://wwww.paginegialle.it":
+            yield None
         # from scrapy.shell import inspect_response
         # inspect_response(response, self)
         extractor = MicrodataExtractor()
@@ -74,6 +59,7 @@ class PagineSpider(SitemapSpider):
         yield homepage_request
 
     def parse_homepage(self, response):
+        import ipdb;ipdb.set_trace()
         item = Business()
 
         title = response.meta['dt_pg_title']
