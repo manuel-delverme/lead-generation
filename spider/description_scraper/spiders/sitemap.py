@@ -10,9 +10,7 @@ from scrapy.spiders import SitemapSpider
 
 
 class PagineSpider(SitemapSpider):
-    sitemap_urls = [
-            "http://www.paginegialle.it/sitemap_schedeazienda_86.xml.gz",
-            ]
+    sitemap_urls = [ "http://www.paginegialle.it/sitemap_schedeazienda_86.xml.gz", ]
     # sitemap_urls = ["http://localhost/sitemap_schedeazienda_86.xml.gz"]
     name = "sitemap_spider"
     handle_httpstatus_list = [200]
@@ -43,23 +41,6 @@ class PagineSpider(SitemapSpider):
         import ipdb;ipdb.set_trace()
         if response.url == "http://wwww.paginegialle.it":
             yield None
-        # from scrapy.shell import inspect_response
-        # inspect_response(response, self)
-        extractor = MicrodataExtractor()
-        items = extractor.extract(response.body_as_unicode(), response.url)['items']
-
-        descriptions = response.xpath("//meta[@name='description']/@content").extract() + response.xpath("//meta[@property='og:description']/@content").extract()
-        homepage_request = scrapy.Request(response.url,cookies=self.cookies, callback=self.parse_homepage, dont_filter=True)
-        # TODO remove don't filter = True
-        homepage_request.meta['dt_pg_description'] = descriptions
-        homepage_request.meta['dt_pg_keywords'] = response.xpath("//meta[@name='keywords']/@content").extract()
-        homepage_request.meta['dt_pg_title'] = response.xpath("//meta[@property='og:title']/@content").extract()
-        homepage_request.meta['dt_microdata'] = items
-        homepage_request.meta['dt_referrer'] =  response.url
-        yield homepage_request
-
-    def parse_homepage(self, response):
-        import ipdb;ipdb.set_trace()
         item = Business()
 
         title = response.meta['dt_pg_title']
@@ -77,7 +58,7 @@ class PagineSpider(SitemapSpider):
         item['meta_description'] = json.dumps(meta_description)
         item['meta_keywords'] = json.dumps(meta_keywords)
         item['page_text'] = "" #  not used for now
-        item['referrer'] = referrer
+        #item['referrer'] = referrer
         item['microdata'] = microdata
 
         yield item
