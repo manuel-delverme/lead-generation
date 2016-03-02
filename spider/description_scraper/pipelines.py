@@ -43,7 +43,6 @@ class DatabasePipeline(object):
         self.Session = sessionmaker(bind=engine)
 
     def process_item(self, item, spider):
-        import ipdb;ipdb.set_trace()
         session = self.Session()
         business = BusinessEntry(**item)
 

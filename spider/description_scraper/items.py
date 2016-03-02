@@ -22,5 +22,5 @@ class Business(scrapy.Item):
     emails = scrapy.Field()
     pg_id = scrapy.Field()
     name = scrapy.Field()
-    provincie = scrapy.Field()
+    province = scrapy.Field()
     zip = scrapy.Field()
