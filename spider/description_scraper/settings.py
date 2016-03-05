@@ -19,7 +19,7 @@ NEWSPIDER_MODULE = 'description_scraper.spiders'
 USER_AGENT = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS=1
+# CONCURRENT_REQUESTS=1
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
@@ -27,8 +27,8 @@ CONCURRENT_REQUESTS=1
 # DOWNLOAD_DELAY=2
 
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN=1
-#CONCURRENT_REQUESTS_PER_IP=1
+# CONCURRENT_REQUESTS_PER_DOMAIN=1
+# CONCURRENT_REQUESTS_PER_IP=1
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED=False
@@ -103,7 +103,7 @@ LOG_LEVEL="INFO"
 
 DATABASE = {
     'drivername': 'postgres',
-    'host': 'tuamadre.net',
+    'host': 'localhost',
     'port': '5432',
     'username': 'spider',
     'password': 'write_only',
