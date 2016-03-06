@@ -19,7 +19,7 @@ NEWSPIDER_MODULE = 'description_scraper.spiders'
 USER_AGENT = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-# CONCURRENT_REQUESTS=1
+CONCURRENT_REQUESTS=1
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
@@ -28,7 +28,7 @@ USER_AGENT = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleW
 
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN=1
-# CONCURRENT_REQUESTS_PER_IP=1
+CONCURRENT_REQUESTS_PER_IP=1
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED=False
@@ -81,7 +81,7 @@ ITEM_PIPELINES = {
 # NOTE: AutoThrottle will honour the standard settings for concurrency and delay
 AUTOTHROTTLE_ENABLED=True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY=3
+AUTOTHROTTLE_START_DELAY=5
 # The maximum download delay to be set in case of high latencies
 AUTOTHROTTLE_MAX_DELAY=60
 # Enable showing throttling stats for every response received:

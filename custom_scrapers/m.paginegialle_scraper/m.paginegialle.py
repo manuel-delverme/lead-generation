@@ -9,6 +9,8 @@ import json
 import requests
 import itertools
 import collections
+import scrapy.http.response
+import scrapy.http.request
 from extruct.w3cmicrodata import MicrodataExtractor
 
 from description_scraper.items import Business
@@ -72,7 +74,7 @@ class PagineGialleSpider(CrawlSpider):
 
 
         response_json = None
-        while response_json is None:
+        while response_json is None or not self.is_good_response(response, response_json):
             try:
                 response_json = json.loads(response.text[1:-3])
             except ValueError as e:
@@ -89,31 +91,14 @@ class PagineGialleSpider(CrawlSpider):
         for page_nr in self.page_nr_iter(first_page, last_page):
             rnd = random.randrange(10000000000, 99999999999)
 
-            req = scrapy.Request(search_url.format(page_nr, rnd), callback=self.parse_search)
+            req = scrapy.http.request.Request(search_url.format(page_nr, rnd), callback=self.parse_search)
             req.meta['pg_page_nr'] = page_nr
             yield req
 
     def parse_search(self, response):
         search_results = json.loads(response.body[1:-3])
-
-        def fail(msg):
-            print  datetime.datetime.now(), response.meta['pg_page_nr'], msg
-            #with open("err.log", "a") as err_log:
-            #    err_log.write(response.url + "\n")
-            self.failed_requests.append(scrapy.Request(response.url, callback=self.parse_search, meta={'pg_page_nr' : response.meta['pg_page_nr']}))
         
-        if search_results['resultsNumber'] == 0:
-            fail("search_results['resultsNumber'] == 0")
-            yield None
-
-        elif 'results' not in search_results:
-            fail("results not found")
-            yield None
-
-        elif len(search_results['results']) != search_results['pagesize']:
-            fail("found {} results expected {}".format(len(search_results['results']), search_results['pagesize']))
-
-        else:
+        if is_good_response(response, search_results):
             print  datetime.datetime.now(), " ", search_results['currentPage'], "-> results:", len(search_results['results']), (search_results['currentPage']*99*100) / search_results['resultsNumber'], "%"
             for result in search_results['results']:
                 item = Business()
@@ -122,6 +107,25 @@ class PagineGialleSpider(CrawlSpider):
                 for k,v in mapping.items():
                     item[k] = json.dumps(get_or_default(result, v, ''))
                 yield item
+        else:
+            yield None
+
+    def is_good_response(self, response, search_results):
+        def fail(msg):
+            print  datetime.datetime.now(), response.request.meta['pg_page_nr'], msg
+            self.failed_requests.append(scrapy.http.request.Request(response.url, callback=self.parse_search, meta={'pg_page_nr' : response.request.meta['pg_page_nr']}))
+
+        if search_results['resultsNumber'] == 0:
+            fail("search_results['resultsNumber'] == 0")
+            return False
+        elif 'results' not in search_results:
+            fail("results not found")
+            return False
+        elif len(search_results['results']) != search_results['pagesize']:
+            fail("found {} results expected {}".format(len(search_results['results']), search_results['pagesize']))
+            return False
+        else:
+            return True
 
     def parse_details(self, response):
         details_results = json.loads(response.body[1:-3])['detail']
@@ -131,3 +135,16 @@ class PagineGialleSpider(CrawlSpider):
         item['meta_description'] = json.dumps(search_results['description'])
 
         yield item
+
+
+spider = PagineGialleSpider()
+for request in spider.start_requests():
+    result = request
+    while isinstance(result, scrapy.http.request.Request):
+        response = requests.get(request.url)
+        scrapy.http.HtmlResponse(body=response.text, request=request, url=response.url)
+        result = request.callback(response)
+            
+    if isinstance(result, Business):
+        import ipdb; ipdb.set_trace()
+        # persist(result)
