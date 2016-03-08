@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import threading
-import logging
+# import logging
 import time
 import datetime
 import scrapy
@@ -70,18 +70,21 @@ class PagineGialleSpider(CrawlSpider):
 
         rnd = random.randrange(1000000000,9999999999)
         print "downloading pg info"
-        response = requests.get(search_url.format(1, rnd))
 
-
-        response_json = None
-        while response_json is None or not self.is_good_response(response, response_json):
+        while True:
+            response = requests.get(search_url.format(1, rnd))
             try:
                 response_json = json.loads(response.text[1:-3])
             except ValueError as e:
                 print response.text
                 print "err", e
-
                 time.sleep(60*5)
+                continue
+            err, err_msg = self._verify_response(response_json)
+            if not err:
+                break
+            else:
+                self._fail(response, err_msg, retry=False)
 
         first_page = self.get_last_crawled_page()
         last_page = response_json['lastPage']
@@ -98,8 +101,14 @@ class PagineGialleSpider(CrawlSpider):
     def parse_search(self, response):
         search_results = json.loads(response.body[1:-3])
         
-        if is_good_response(response, search_results):
-            print  datetime.datetime.now(), " ", search_results['currentPage'], "-> results:", len(search_results['results']), (search_results['currentPage']*99*100) / search_results['resultsNumber'], "%"
+        err, err_msg = self._verify_response(search_results)
+        if err:
+            self._fail(response, err_msg)
+            yield None
+        else:
+            perc = 100 * ( (search_results['currentPage']*search_results['pagesize']) / search_results['resultsNumber'])
+            print  datetime.datetime.now(), search_results['currentPage'], "-> results:", len(search_results['results']), perc, "%"
+
             for result in search_results['results']:
                 item = Business()
 
@@ -107,25 +116,29 @@ class PagineGialleSpider(CrawlSpider):
                 for k,v in mapping.items():
                     item[k] = json.dumps(get_or_default(result, v, ''))
                 yield item
+
+    def _fail(self, response, msg, retry = True):
+        if hasattr(response.request, 'meta'):
+            resp_id = response.request.meta['pg_page_nr']
         else:
-            yield None
+            resp_id =  "NO ID FOUND"
+        print  datetime.datetime.now(), resp_id, msg
+        if retry:
+            failed_request = scrapy.http.request.Request(response.url, callback=self.parse_search, meta={'pg_page_nr' : response.request.meta['pg_page_nr']})
+            self.failed_requests.append(failed_request)
 
-    def is_good_response(self, response, search_results):
-        def fail(msg):
-            print  datetime.datetime.now(), response.request.meta['pg_page_nr'], msg
-            self.failed_requests.append(scrapy.http.request.Request(response.url, callback=self.parse_search, meta={'pg_page_nr' : response.request.meta['pg_page_nr']}))
+    def _verify_response(self, search_results):
 
-        if search_results['resultsNumber'] == 0:
-            fail("search_results['resultsNumber'] == 0")
-            return False
+        if 'resultsNumber' not in search_results:
+            return False, "resultsNmber not found"
+        elif search_results['resultsNumber'] == 0:
+            return False, "0 results, not possible"
         elif 'results' not in search_results:
-            fail("results not found")
-            return False
+            return False, "results not found"
         elif len(search_results['results']) != search_results['pagesize']:
-            fail("found {} results expected {}".format(len(search_results['results']), search_results['pagesize']))
-            return False
+            return False, "found {} results expected {}".format(len(search_results['results']), search_results['pagesize'])
         else:
-            return True
+            return True, ""
 
     def parse_details(self, response):
         details_results = json.loads(response.body[1:-3])['detail']
@@ -140,11 +153,14 @@ class PagineGialleSpider(CrawlSpider):
 spider = PagineGialleSpider()
 for request in spider.start_requests():
     result = request
+
     while isinstance(result, scrapy.http.request.Request):
         response = requests.get(request.url)
-        scrapy.http.HtmlResponse(body=response.text, request=request, url=response.url)
-        result = request.callback(response)
-            
-    if isinstance(result, Business):
-        import ipdb; ipdb.set_trace()
-        # persist(result)
+        response = scrapy.http.HtmlResponse(body=response.text, request=request, encoding="UTF-8", url=response.url)
+        for result in request.callback(response):
+            if isinstance(result, Business):
+                print "# persist(result)"
+            elif result is None:
+                pass
+            else: 
+                raise Exception("unhandled response")
