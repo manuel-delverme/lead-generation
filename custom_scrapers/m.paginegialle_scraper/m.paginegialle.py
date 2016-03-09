@@ -5,15 +5,13 @@ import datetime
 import random
 import json
 import requests
-# import logging
-# import scrapy
-# from extruct.w3cmicrodata import MicrodataExtractor
 import collections
 import scrapy.http.response
 import scrapy.http.request
 
 from description_scraper.items import Business
 from scrapy.spiders import CrawlSpider
+from pipeline import DatabasePipeline
 
 
 def get_or_default(obj, key, default):
@@ -106,23 +104,19 @@ class PagineGialleSpider(CrawlSpider):
             self._fail(http_response, err_msg)
             yield None
         else:
-            print search_results['currentPage']
-            print search_results['pagesize']
-            print search_results['resultsNumber']
-
             perc = 100 * (
                 (search_results['currentPage'] * search_results['pagesize']) / search_results['resultsNumber'])
             print datetime.datetime.now(), search_results['currentPage'], "-> results:", len(
                 search_results['results']), perc, "%"
 
-            for result in search_results['results']:
+            for search_result in search_results['results']:
                 item = Business()
 
                 mapping = {'phones': 'phones', 'addresses': 'address', 'cities': 'city', 'countries': 'country',
                            'emails': 'emailAddress', 'pg_id': 'id', 'name': 'name', 'province': 'province',
                            'homepage': 'webAddress', 'zip': 'zip'}
                 for k, v in mapping.items():
-                    item[k] = json.dumps(get_or_default(result, v, ''))
+                    item[k] = json.dumps(get_or_default(search_result, v, ''))
                 yield item
 
     def _fail(self, failed_response, msg, retry=True):
@@ -163,8 +157,9 @@ class PagineGialleSpider(CrawlSpider):
 
         yield item
 
-
 spider = PagineGialleSpider()
+pipeline = DatabasePipeline()
+
 for request in spider.start_requests():
     result = request
 
@@ -174,7 +169,7 @@ for request in spider.start_requests():
         response = scrapy.http.HtmlResponse(body=response.text, request=request, encoding="UTF-8", url=response.url)
         for result in request.callback(response):
             if isinstance(result, Business):
-                print "# persist(result)"
+                pipeline.process_item(result)
             elif result is None:
                 pass
             else:
