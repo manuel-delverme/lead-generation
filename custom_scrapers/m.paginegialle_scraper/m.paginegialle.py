@@ -82,7 +82,7 @@ class PagineGialleSpider(CrawlSpider):
             if not err:
                 break
             else:
-                self._fail(response, err_msg, retry=False)
+                self._fail(initial_response, err_msg, retry=False)
 
         first_page = get_last_crawled_page()
         last_page = statistics_json['lastPage']
@@ -129,7 +129,7 @@ class PagineGialleSpider(CrawlSpider):
             resp_id = response.request.meta['pg_page_nr']
         else:
             resp_id = "NO ID FOUND"
-        print  datetime.datetime.now(), resp_id, msg
+        print datetime.datetime.now(), resp_id, msg
         if retry:
             failed_request = scrapy.http.request.Request(response.url, callback=self.parse_search,
                                                          meta={'pg_page_nr': response.request.meta['pg_page_nr']})
