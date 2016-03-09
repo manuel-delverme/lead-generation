@@ -111,7 +111,7 @@ class PagineGialleSpider(CrawlSpider):
 
             perc = 100 * (
                 (search_results['currentPage'] * search_results['pagesize']) / search_results['resultsNumber'])
-            print  datetime.datetime.now(), search_results['currentPage'], "-> results:", len(
+            print datetime.datetime.now(), search_results['currentPage'], "-> results:", len(
                 search_results['results']), perc, "%"
 
             for result in search_results['results']:
@@ -124,32 +124,33 @@ class PagineGialleSpider(CrawlSpider):
                     item[k] = json.dumps(get_or_default(result, v, ''))
                 yield item
 
-    def _fail(self, response, msg, retry=True):
-        if hasattr(response.request, 'meta'):
-            resp_id = response.request.meta['pg_page_nr']
+    def _fail(self, failed_response, msg, retry=True):
+        if hasattr(failed_response.request, 'meta'):
+            resp_id = failed_response.request.meta['pg_page_nr']
         else:
             resp_id = "NO ID FOUND"
         print datetime.datetime.now(), resp_id, msg
         if retry:
-            failed_request = scrapy.http.request.Request(response.url, callback=self.parse_search,
-                                                         meta={'pg_page_nr': response.request.meta['pg_page_nr']})
+            failed_request = scrapy.http.request.Request(failed_response.url, callback=self.parse_search,
+                                                         meta={
+                                                             'pg_page_nr': failed_response.request.meta['pg_page_nr']})
             self.failed_requests.append(failed_request)
 
     @staticmethod
     def _verify_response(search_results):
         if 'resultsNumber' not in search_results:
-            return False, "resultsNumber not found"
+            return True, "resultsNumber not found"
         elif search_results['resultsNumber'] < 3000000:
-            return False, "{} results, too few".format(search_results['resultsNumber'])
+            return True, "{} results, too few".format(search_results['resultsNumber'])
         elif 'results' not in search_results:
-            return False, "results not found"
+            return True, "results not found"
         elif len(search_results['results']) != search_results['pagesize']:
-            return False, "found {} results expected {}".format(len(search_results['results']),
-                                                                search_results['pagesize'])
+            return True, "found {} results expected {}".format(len(search_results['results']),
+                                                               search_results['pagesize'])
         else:
             print "search_results['resultsNumber']", search_results['resultsNumber']
             print "found {} results expected {}".format(len(search_results['results']), search_results['pagesize'])
-            return True, ""
+            return False, ""
 
     @staticmethod
     def parse_details(json_entry):
