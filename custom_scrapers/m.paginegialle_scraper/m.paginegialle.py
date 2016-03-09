@@ -3,7 +3,7 @@ import threading
 # import logging
 import time
 import datetime
-import scrapy
+# import scrapy
 import random
 import json
 import requests
@@ -106,7 +106,11 @@ class PagineGialleSpider(CrawlSpider):
             self._fail(response, err_msg)
             yield None
         else:
-            perc = 100 * ( (search_results['currentPage']*search_results['pagesize']) / search_results['resultsNumber'])
+            print search_results['currentPage']
+            print search_results['pagesize']
+            print search_results['resultsNumber']
+
+            perc = 100 * ( ( search_results['currentPage'] * search_results['pagesize'] ) / search_results['resultsNumber'])
             print  datetime.datetime.now(), search_results['currentPage'], "-> results:", len(search_results['results']), perc, "%"
 
             for result in search_results['results']:
@@ -131,13 +135,15 @@ class PagineGialleSpider(CrawlSpider):
 
         if 'resultsNumber' not in search_results:
             return False, "resultsNmber not found"
-        elif search_results['resultsNumber'] == 0:
-            return False, "0 results, not possible"
+        elif search_results['resultsNumber'] < 3000000:
+            return False, "{} results, too few".format(search_results['resultsNumber'])
         elif 'results' not in search_results:
             return False, "results not found"
         elif len(search_results['results']) != search_results['pagesize']:
             return False, "found {} results expected {}".format(len(search_results['results']), search_results['pagesize'])
         else:
+            print "search_results['resultsNumber']", search_results['resultsNumber']
+            print "found {} results expected {}".format(len(search_results['results']), search_results['pagesize'])
             return True, ""
 
     def parse_details(self, response):
