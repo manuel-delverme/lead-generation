@@ -4,6 +4,7 @@ import time
 import datetime
 import random
 import json
+import settings
 import requests
 import collections
 import scrapy.http.response
@@ -68,7 +69,7 @@ class PagineGialleSpider(CrawlSpider):
         print "downloading pg info"
 
         while True:
-            time.sleep(1)
+            time.sleep(settings.DOWNLOAD_DELAY)
             initial_response = requests.get(search_url.format(1, rnd))
             try:
                 statistics_json = json.loads(initial_response.text[1:-3])
@@ -164,7 +165,7 @@ for request in spider.start_requests():
     result = request
 
     while isinstance(result, scrapy.http.request.Request):
-        time.sleep(1)
+        time.sleep(settings.DOWNLOAD_DELAY)
         response = requests.get(request.url)
         response = scrapy.http.HtmlResponse(body=response.text, request=request, encoding="UTF-8", url=response.url)
         for result in request.callback(response):
