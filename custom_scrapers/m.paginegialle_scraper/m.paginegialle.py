@@ -62,7 +62,7 @@ class PagineGialleSpider(CrawlSpider):
                 yield page_nr
 
     def start_requests(self):
-        search_url = "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize=99&output=jsonp&what=%00&page={}&_={}"
+        search_url = "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize=25&output=jsonp&what=%00&page={}&_={}"
 
         rnd = random.randrange(1000000000, 9999999999)
         print "downloading pg info"
