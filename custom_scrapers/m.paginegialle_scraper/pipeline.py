@@ -59,7 +59,6 @@ class DatabasePipeline(object):
         return
         session = self.Session()
         business = BusinessEntry(**item)
-
         try:
             session.add(business)
             session.commit()

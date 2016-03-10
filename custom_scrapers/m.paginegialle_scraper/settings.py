@@ -24,7 +24,7 @@ CONCURRENT_REQUESTS=1
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-# DOWNLOAD_DELAY=2
+DOWNLOAD_DELAY=1
 
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN=1
@@ -100,10 +100,9 @@ DUPEFILTER_DEBUG=True
 TOR_PASSWORD="howdoicake?"
 LOG_LEVEL="INFO"
 
-
 DATABASE = {
     'drivername': 'postgres',
-    'host': 'localhost',
+    'host': 'tuamadre.net',
     'port': '5432',
     'username': 'spider',
     'password': 'write_only',
