@@ -136,7 +136,7 @@ class PagineGialleSpider(CrawlSpider):
     def _verify_response(search_results):
         if 'resultsNumber' not in search_results:
             return True, "resultsNumber not found"
-        elif search_results['resultsNumber'] < 3000000:
+        elif search_results['resultsNumber'] < 1000000: #3000000:
             return True, "{} results, too few".format(search_results['resultsNumber'])
         elif 'results' not in search_results:
             return True, "results not found"
