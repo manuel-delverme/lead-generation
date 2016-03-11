@@ -33,7 +33,7 @@ def get_last_crawled_page():
         last_page = int(line)
         print datetime.datetime.now(), "resuming from ", last_page
     except IOError:
-        last_page = 1
+        last_page = 0
         print datetime.datetime.now(), "resuming from ", last_page, "no progress.log found"
     return last_page
 
@@ -44,33 +44,38 @@ class PagineGialleSpider(CrawlSpider):
 
     def __init__(self, *a, **kw):
         super(PagineGialleSpider, self).__init__(*a, **kw)
+        self.MAX_PAGESIZE = 1000
+        self.MIN_PAGESIZE = 80
+        self.parsed_items = None
         self.failed_requests = collections.deque([])
-        self.request_url_lock = threading.Lock()
 
-    def page_nr_iter(self, first_page, last_page):
+    def page_nr_iter(self, already_parsed_items):
+        self.parsed_items = already_parsed_items
+
         with open("progress.log", 'a') as plog:
-            for page_nr in range(first_page, last_page):
-                while True:
-                    # retry the failed requests
-                    try:
-                        failed_request = self.failed_requests.pop()
-                        page_nr = failed_request.meta['pg_page_nr']
-                        yield page_nr
-                    except IndexError:
-                        break
-                plog.write(str(page_nr) + "\n")
-                plog.flush()
-                yield page_nr
+            while True:
+                page_size = min(max(self.parsed_items, self.MIN_PAGESIZE), self.MAX_PAGESIZE)
+                page_nr = int(self.parsed_items / page_size)
+                # retry the failed requests
+                try:
+                    failed_request = self.failed_requests.pop()
+                    page_nr = failed_request.meta['pg_page_nr']
+                    yield page_nr
+                except IndexError:
+                    break
+            plog.write(str(page_nr) + "\n")
+            plog.flush()
+            yield (page_nr, page_size)
 
     def start_requests(self):
-        search_url = "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize=25&output=jsonp&what=%00&page={}&_={}"
+        search_url = "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize={}&output=jsonp&what=%00&page={}&_={}"
 
         rnd = random.randrange(1000000000, 9999999999)
         print "downloading pg info"
 
         while True:
             time.sleep(settings.DOWNLOAD_DELAY)
-            initial_response = requests.get(search_url.format(1, rnd))
+            initial_response = requests.get(search_url.format(25, 1, rnd))
             try:
                 statistics_json = json.loads(initial_response.text[1:-3])
             except ValueError as e:
@@ -84,16 +89,16 @@ class PagineGialleSpider(CrawlSpider):
             else:
                 self._fail(initial_response, err_msg, retry=False)
 
-        first_page = get_last_crawled_page()
-        last_page = statistics_json['lastPage']
-        print "found {} pages".format(last_page)
-        print "starting from {}".format(first_page)
+        already_parsed_items = get_last_crawled_page()
+        # last_page = statistics_json['lastPage']
+        # print "found {} pages".format(last_page)
+        print "starting from {}".format(already_parsed_items)
 
         # main loop
-        for page_nr in self.page_nr_iter(first_page, last_page):
+        for page_nr, page_size in self.page_nr_iter(already_parsed_items):
             rnd = random.randrange(10000000000, 99999999999)
 
-            req = scrapy.http.request.Request(search_url.format(page_nr, rnd), callback=self.parse_search)
+            req = scrapy.http.request.Request(search_url.format(page_size, page_nr, rnd), callback=self.parse_search)
             req.meta['pg_page_nr'] = page_nr
             yield req
 
@@ -105,8 +110,7 @@ class PagineGialleSpider(CrawlSpider):
             self._fail(http_response, err_msg)
             yield None
         else:
-            perc = 100 * (
-                (search_results['currentPage'] * search_results['pagesize']) / search_results['resultsNumber'])
+            perc = 100 * ((search_results['currentPage'] * search_results['pagesize']) / search_results['resultsNumber'])
             print datetime.datetime.now(), search_results['currentPage'], "-> results:", len(
                 search_results['results']), perc, "%"
 
@@ -116,6 +120,7 @@ class PagineGialleSpider(CrawlSpider):
                 mapping = {'phones': 'phones', 'addresses': 'address', 'cities': 'city', 'countries': 'country',
                            'emails': 'emailAddress', 'pg_id': 'id', 'name': 'name', 'province': 'province',
                            'homepage': 'webAddress', 'zip': 'zip'}
+                self.parsed_items += 1
                 for k, v in mapping.items():
                     item[k] = json.dumps(get_or_default(search_result, v, ''))
                 yield item
@@ -140,7 +145,7 @@ class PagineGialleSpider(CrawlSpider):
             return True, "{} results, too few".format(search_results['resultsNumber'])
         elif 'results' not in search_results:
             return True, "results not found"
-        elif len(search_results['results']) != search_results['pagesize']:
+        elif len(search_results['results']) == 0:  # search_results['pagesize']:
             return True, "found {} results expected {}".format(len(search_results['results']),
                                                                search_results['pagesize'])
         else:
