@@ -41,7 +41,7 @@ def get_last_crawled_page():
     return last_page
 
 
-class PagineGialleSpider():
+class PagineGialleSpider(object):
     name = "m.paginegialle.it"
 
     def __init__(self):
