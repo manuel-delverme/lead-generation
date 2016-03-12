@@ -120,11 +120,11 @@ class PagineGialleSpider(object):
     def _verify_response(search_results):
         if 'resultsNumber' not in search_results:
             return True, "resultsNumber not found"
-        elif search_results['resultsNumber'] < 3000000/search_results['pagesize']:
+        elif search_results['resultsNumber'] < 3000000:
             return True, "{} results, too few".format(search_results['resultsNumber'])
         elif 'results' not in search_results:
             return True, "results not found"
-        elif len(search_results['results']) == 0:  # search_results['pagesize']:
+        elif len(search_results['results']) != search_results['pagesize']:
             return True, "found {} results expected {}".format(len(search_results['results']),
                                                                search_results['pagesize'])
         else:
