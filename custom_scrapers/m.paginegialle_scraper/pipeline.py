@@ -56,7 +56,6 @@ class DatabasePipeline(object):
         self.Session = sessionmaker(bind=engine)
 
     def process_item(self, item):
-        return
         session = self.Session()
         business = BusinessEntry(**item)
         try:
