@@ -52,11 +52,11 @@ class PagineGialleSpider(object):
             # "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize={}&output=jsonp&what=%00&page={}&_={}",
             # "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize={}&output=jsonp&address=%00&page={}&_={}"
             # "http://mobile.seat.it/searchpg?pagesize={}&where=Italia&sortby=name&output=jsonp&page={}&_={}",
-            "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize={}&output=jsonp&lang=en&categories={}&page={}&_={}"
+            "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize={}&output=jsonp&lang=en&categories={}&where={}&page={}&_={}"
         ]
         self.cookies = { 's_vi': '[CS]v1|2AF274BE0531254E-400001050000BEF7[CE]', }
         self.headers = { 'Pragma': 'no-cache', 'DNT': '1', 'Accept-Encoding': 'gzip, deflate, sdch', 'Accept-Language': 'en-US,en;q=0.8,it;q=0.6', 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36', 'Accept': '*/*', 'Referer': 'http://m.paginegialle.it/listing?what=formaggio&where=Italia', 'Connection': 'keep-alive', 'Cache-Control': 'no-cache', }
-        self.pagesize = 4300
+        self.pagesize = 999
         # self.pg_db_entries = 3541693
         # self.nr_parsed_items = 0
 
@@ -68,13 +68,14 @@ class PagineGialleSpider(object):
             page_nr = int(self.nr_parsed_items / page_size)
             yield (page_size, page_nr)
 
-    def call_api(self, page_size, category, page):
+    def call_api(self, page_size, category, region, page):
         # fetches api json object
         while True:
             rnd = random.randrange(1000000000, 9999999999)
             time.sleep(settings.DOWNLOAD_DELAY)
             url = random.choice(self.api_urls)
-            http_response = requests.get(url.format(page_size, category, page, rnd), headers=self.headers, cookies=self.cookies)
+            http_response = requests.get(url.format(page_size, category, region, page, rnd), headers=self.headers, cookies=self.cookies)
+            print(url.format(page_size, category, region, page, rnd))
             try:
                 json_response = json.loads(http_response.text[1:-3])
             except ValueError as e:
@@ -87,11 +88,13 @@ class PagineGialleSpider(object):
                 if not err:
                     return json_response, err_msg
                 else:
+                    import ipdb; ipdb.set_trace()
                     print("failed", (page, page_size), err_msg)
 
     def generate_requests(self):
         page_nr, resumed_category = get_last_crawled_item()
         self.category = resumed_category
+        self.region = "undefined"
 
         # already_parsed_pages = self.nr_parsed_items / self.pagesize
         print("starting from {}/{}".format(page_nr, resumed_category))
@@ -111,15 +114,18 @@ class PagineGialleSpider(object):
             for category in categories_list:
                 category = category[:-1]
                 self.category = category
-                for i in itertools.count(1):
-                    message = yield (self.pagesize, category, i)
-                    if isinstance(message, StopIteration):
-                        break
+                list_of_regions = [ "Abruzzo", "Basilicata", "Calabria", "Campania", "Emilia-Romagna", "Friuli Venezia Giulia", "Lazio", "Liguria", "Lombardia", "Marche", "Molise", "Piemonte", "Puglia", "Sardegna", "Sicilia", "Toscana", "Trentino-Alto Adige", "Umbria", "Valle D'aosta", "Veneto"]
+                for region in list_of_regions:
+                    self.region = region
+                    for i in itertools.count(1):
+                        message = yield (self.pagesize, category, region, i)
+                        if isinstance(message, StopIteration):
+                            break
 
     def parse_pg_search(self, search_results):
         # turns json object in items
         # perc = (100 * self.nr_parsed_items ) / self.pg_db_entries
-        print(datetime.datetime.now(), "category:", self.category, "page:", search_results['currentPage'], "results:", len(search_results['results']), "/", search_results['pagesize'])
+        print(datetime.datetime.now(), "category:", self.category, "region:", self.region, "page:", search_results['currentPage'], "results:", len(search_results['results']) * search_results['currentPage'], "/", search_results['resultsNumber'])
 
         for search_result in search_results['results']:
             item = Business()
@@ -164,8 +170,9 @@ def main():
 
     request_generator = spider.generate_requests()
     scraped_ids = set()
-    for page_size, category, page_nr in request_generator:
-        result_json, err_msg = spider.call_api(page_size, category, page_nr)
+
+    for page_size, category, region, page_nr in request_generator:
+        result_json, err_msg = spider.call_api(page_size, category, region, page_nr)
         for businessEntry in spider.parse_pg_search(result_json):
             if isinstance(businessEntry, Business):
                 if businessEntry['pg_id'] in scraped_ids:
