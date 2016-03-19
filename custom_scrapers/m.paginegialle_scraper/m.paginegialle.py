@@ -145,7 +145,7 @@ class PagineGialleSpider(object):
         page_end = current_page * page_size
         if page_end > max_results:
             page_begin = (current_page - 1) * page_size
-            expected_results = page_begin - max_results
+            expected_results = max_results - page_begin
             last_page = True
         else:
             expected_results = page_size
