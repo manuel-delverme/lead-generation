@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import sys
 import time
 import datetime
 import random
@@ -10,12 +9,8 @@ import itertools
 
 import settings
 import requests
-import collections
-import scrapy.http.response
-import scrapy.http.request
 
 from description_scraper.items import Business
-from scrapy.spiders import CrawlSpider
 from pipeline import DatabasePipeline
 
 
@@ -45,28 +40,29 @@ def get_last_crawled_item():
 
 
 class PagineGialleSpider(object):
-    name = "m.paginegialle.it"
-
     def __init__(self):
+        self.mapping = {'phones': 'phones', 'addresses': 'address', 'cities': 'city', 'countries': 'country',
+                        'emails': 'emailAddress', 'pg_id': 'id', 'name': 'name', 'province': 'province',
+                        'homepage': 'webAddress', 'zip': 'zip'}
+        self.list_of_regions = ["Abruzzo", "Basilicata", "Calabria", "Campania", "Emilia-Romagna", "Friuli Venezia Giulia", "Lazio", "Liguria", "Lombardia", "Marche", "Molise", "Piemonte", "Puglia", "Sardegna", "Sicilia", "Toscana", "Trentino-Alto Adige", "Umbria", "Valle D'aosta", "Veneto"]
         self.api_urls = [
             # "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize={}&output=jsonp&what=%00&page={}&_={}",
             # "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize={}&output=jsonp&address=%00&page={}&_={}"
             # "http://mobile.seat.it/searchpg?pagesize={}&where=Italia&sortby=name&output=jsonp&page={}&_={}",
             "http://mobile.seat.it/searchpg?client=pgbrowsing&version=5.0.1&device=evo&pagesize={}&output=jsonp&lang=en&categories={}&where={}&page={}&_={}"
         ]
-        self.cookies = { 's_vi': '[CS]v1|2AF274BE0531254E-400001050000BEF7[CE]', }
-        self.headers = { 'Pragma': 'no-cache', 'DNT': '1', 'Accept-Encoding': 'gzip, deflate, sdch', 'Accept-Language': 'en-US,en;q=0.8,it;q=0.6', 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36', 'Accept': '*/*', 'Referer': 'http://m.paginegialle.it/listing?what=formaggio&where=Italia', 'Connection': 'keep-alive', 'Cache-Control': 'no-cache', }
+        self.cookies = {'s_vi': '[CS]v1|2AF274BE0531254E-400001050000BEF7[CE]',}
+        self.headers = {'Pragma': 'no-cache', 'DNT': '1', 'Accept-Encoding': 'gzip, deflate, sdch',
+                        'Accept-Language': 'en-US,en;q=0.8,it;q=0.6',
+                        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36',
+                        'Accept': '*/*', 'Referer': 'http://m.paginegialle.it/listing?what=formaggio&where=Italia',
+                        'Connection': 'keep-alive', 'Cache-Control': 'no-cache',}
         self.pagesize = 999
+        self.nr_parsed_items = None
+        self.category = "unset"
+        self.region = "unset"
         # self.pg_db_entries = 3541693
         # self.nr_parsed_items = 0
-
-    def page_nr_iter(self, already_parsed_items):
-        # controls request progress and calculates what to download next
-        self.nr_parsed_items = already_parsed_items
-        while True:
-            page_size = min(max(self.nr_parsed_items, self.MIN_PAGESIZE), self.MAX_PAGESIZE)
-            page_nr = int(self.nr_parsed_items / page_size)
-            yield (page_size, page_nr)
 
     def call_api(self, page_size, category, region, page):
         # fetches api json object
@@ -88,7 +84,8 @@ class PagineGialleSpider(object):
                 if not err:
                     return json_response, err_msg
                 else:
-                    import ipdb; ipdb.set_trace()
+                    import ipdb
+                    ipdb.set_trace()
                     print("failed", (page, page_size), err_msg)
 
     def generate_requests(self):
@@ -102,10 +99,10 @@ class PagineGialleSpider(object):
         with open("categories.txt") as categories_list:
             if resumed_category != "none":
                 while resumed_category != next(categories_list)[:-1]:
-                    #scroll the file until we get our category
+                    # scroll the file until we get our category
                     pass
                 for i in itertools.count(page_nr):
-                    #finish yielding page numbers
+                    # finish yielding page numbers
                     message = yield (self.pagesize, resumed_category, i)
                     if isinstance(message, StopIteration):
                         break
@@ -114,8 +111,7 @@ class PagineGialleSpider(object):
             for category in categories_list:
                 category = category[:-1]
                 self.category = category
-                list_of_regions = [ "Abruzzo", "Basilicata", "Calabria", "Campania", "Emilia-Romagna", "Friuli Venezia Giulia", "Lazio", "Liguria", "Lombardia", "Marche", "Molise", "Piemonte", "Puglia", "Sardegna", "Sicilia", "Toscana", "Trentino-Alto Adige", "Umbria", "Valle D'aosta", "Veneto"]
-                for region in list_of_regions:
+                for region in self.list_of_regions:
                     self.region = region
                     for i in itertools.count(1):
                         message = yield (self.pagesize, category, region, i)
@@ -123,15 +119,14 @@ class PagineGialleSpider(object):
                             break
 
     def parse_pg_search(self, search_results):
-        # turns json object in items
-        # perc = (100 * self.nr_parsed_items ) / self.pg_db_entries
-        print(datetime.datetime.now(), "category:", self.category, "region:", self.region, "page:", search_results['currentPage'], "results:", len(search_results['results']) * search_results['currentPage'], "/", search_results['resultsNumber'])
+        print(datetime.datetime.now(), "category:", self.category, "region:", self.region, "page:",
+              search_results['currentPage'], "results:", len(search_results['results']) * search_results['currentPage'],
+              "/", search_results['resultsNumber'])
 
         for search_result in search_results['results']:
             item = Business()
-            mapping = {'phones': 'phones', 'addresses': 'address', 'cities': 'city', 'countries': 'country', 'emails': 'emailAddress', 'pg_id': 'id', 'name': 'name', 'province': 'province', 'homepage': 'webAddress', 'zip': 'zip'}
             # self.nr_parsed_items += 1
-            for k, v in mapping.items():
+            for k, v in self.mapping.items():
                 item[k] = json.dumps(get_or_default(search_result, v, ''))
             yield item
 
@@ -148,7 +143,7 @@ class PagineGialleSpider(object):
         max_results = search_results['resultsNumber']
 
         page_end = current_page * page_size
-        if  page_end > max_results:
+        if page_end > max_results:
             expected_results = page_end - max_results
             last_page = True
         else:

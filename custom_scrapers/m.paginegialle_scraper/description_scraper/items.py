@@ -7,6 +7,7 @@
 
 import scrapy
 
+
 class Business(scrapy.Item):
     homepage = scrapy.Field()
     meta_description = scrapy.Field()
