@@ -161,11 +161,6 @@ class PagineGialleSpider(object):
 
 
 def main():
-    import pydevd
-    import sys
-    sys.path.append('/home/yitef/contact_list/pycharm-debug.egg')
-    pydevd.settrace('localhost', port=31337, stdoutToServer=True, stderrToServer=True)
-
     spider = PagineGialleSpider()
     pipeline = DatabasePipeline()
 
