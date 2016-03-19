@@ -23,6 +23,7 @@ def get_or_default(obj, key, default):
 
 def get_last_crawled_item():
     try:
+        raise IOError
         line = None
         with open("progress.log", "r") as plog:
             for line in plog:
@@ -84,9 +85,7 @@ class PagineGialleSpider(object):
                 if not err:
                     return json_response, err_msg
                 else:
-                    import ipdb
-                    ipdb.set_trace()
-                    print("failed", (page, page_size), err_msg)
+                    print("failed", (page_size, category, region, page), err_msg)
 
     def generate_requests(self):
         page_nr, resumed_category = get_last_crawled_item()
@@ -103,8 +102,10 @@ class PagineGialleSpider(object):
                     pass
                 for i in itertools.count(page_nr):
                     # finish yielding page numbers
+                    print("yielding[0]", (self.pagesize, resumed_category, i))
                     message = yield (self.pagesize, resumed_category, i)
-                    if isinstance(message, StopIteration):
+                    if message is StopIteration:
+                        yield
                         break
 
             # main loop
@@ -114,8 +115,10 @@ class PagineGialleSpider(object):
                 for region in self.list_of_regions:
                     self.region = region
                     for i in itertools.count(1):
+                        print("yielding[1]", (self.pagesize, resumed_category, i))
                         message = yield (self.pagesize, category, region, i)
-                        if isinstance(message, StopIteration):
+                        if message is StopIteration:
+                            yield
                             break
 
     def parse_pg_search(self, search_results):
@@ -172,7 +175,6 @@ def main():
         for businessEntry in spider.parse_pg_search(result_json):
             if isinstance(businessEntry, Business):
                 if businessEntry['pg_id'] in scraped_ids:
-                    import ipdb; ipdb.set_trace()
                     print("duplicate")
                     break
                 else:
