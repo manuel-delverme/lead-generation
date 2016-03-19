@@ -144,7 +144,8 @@ class PagineGialleSpider(object):
 
         page_end = current_page * page_size
         if page_end > max_results:
-            expected_results = page_end - max_results
+            page_begin = (current_page - 1) * page_size
+            expected_results = page_begin - max_results
             last_page = True
         else:
             expected_results = page_size
@@ -160,6 +161,11 @@ class PagineGialleSpider(object):
 
 
 def main():
+    import pydevd
+    import sys
+    sys.path.append('/home/yitef/contact_list/pycharm-debug.egg')
+    pydevd.settrace('localhost', port=31337, stdoutToServer=True, stderrToServer=True)
+
     spider = PagineGialleSpider()
     pipeline = DatabasePipeline()
 
