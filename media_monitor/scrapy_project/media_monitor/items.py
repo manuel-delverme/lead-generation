@@ -12,5 +12,8 @@ class MediaArticle(scrapy.Item):
     link = scrapy.Field()
     title = scrapy.Field()
     text = scrapy.Field()
+    summary = scrapy.Field()
+    authors = scrapy.Field()
     domain = scrapy.Field()
+    date = scrapy.Field()
     pass
