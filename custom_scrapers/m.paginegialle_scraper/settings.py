@@ -102,3 +102,5 @@ DATABASE = {
     'password': 'write_only',
     'database': 'grepr'
 }
+RESUME_LOG = "failed.log"
+FAIL_LOG = "failed_failed.log"

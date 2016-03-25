@@ -87,7 +87,7 @@ class PagineGialleSpider(object):
                     return json_response, err_msg
                 else:
                     if err_msg == "results not found":
-                        with open("failed.log", 'a') as fail_log:
+                        with open(settings.FAIL_LOG, 'a') as fail_log:
                             fail_log.write("{},{},{},{}\n".format(page_size, category, region, page))
                         return None, err_msg
                     else:
@@ -111,6 +111,12 @@ class PagineGialleSpider(object):
                     if status == "change region":
                         yield
                         break
+
+        for failed_record in open(settings.RESUME_LOG):
+            page_tuple = tuple(failed_record.strip("\n").split(","))
+            self.category = page_tuple[1]
+            self.region = page_tuple[2]
+            yield page_tuple
 
         with open("categories.txt") as categories_list:
             if resumed_category != "none":
@@ -149,7 +155,6 @@ class PagineGialleSpider(object):
                 yield item
 
     def _verify_response(self, search_results):
-
         required_keys = ['resultsNumber', 'results', 'currentPage', 'pagesize']
         for key in required_keys:
             if key not in search_results:
@@ -169,16 +174,21 @@ class PagineGialleSpider(object):
             last_page = False
 
         found_results = len(search_results['results'])
+
+        if page_end > 4900:
+            return False, "last_page"
         if found_results != expected_results:
             if float(expected_results - found_results) / float(max_results) < 0.15:
                 print("found {} results expected {} ignoring the diff".format(found_results, expected_results))
-                with open("failed.log", 'a') as fail_log:
-                    fail_log.write("{},{},{},{}\n".format(page_size, search_results['request']['params']['params']['categories'], search_results['request']['params']['params']['where'], current_page))
+                # with open(settings.FAIL_LOG, 'a') as fail_log:
+                #     fail_log.write("{},{},{},{}\n".format(page_size, search_results['request']['params']['params']['categories'], search_results['request']['params']['params']['where'], current_page))
                 return False, "last_page"
-            elif float(expected_results - found_results) / float(max_results) < 0.30 and not self.IGNORE:
-                import ipdb; ipdb.set_trace()
-                print("human interaction")
-                return True, "human is looking"
+            elif float(expected_results - found_results) / float(max_results) < 0.30:
+                if last_page:
+                    print("found {} results expected {} ignoring the diff FUCKTHIS".format(found_results, expected_results))
+                    with open(settings.FAIL_LOG, 'a') as fail_log:
+                        fail_log.write("{},{},{},{}\n".format(page_size, search_results['request']['params']['params']['categories'], search_results['request']['params']['params']['where'], current_page))
+                    return False, "last_page"
             else:
                 return True, "found {} results expected {}".format(found_results, expected_results)
         else:
@@ -219,7 +229,7 @@ def main():
 
             if duplicates > 0:
                 print("{} duplicates".format(duplicates))
-                with open("failed.log", 'a') as fail_log:
+                with open(settings.FAIL_LOG, 'a') as fail_log:
                     fail_log.write("{},{},{},{}\n".format(page_size, category, region, page_nr))
 
             with open("progress.log", 'a') as plog:
