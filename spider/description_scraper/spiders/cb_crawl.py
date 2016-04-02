@@ -4,8 +4,7 @@ import scrapy
 import json
 import glob
 import scrapy.loader
-from description_scraper.items import Business
-
+from description_scraper.items import Company
 
 class CrawlSpider(scrapy.Spider):
     name = "cb"

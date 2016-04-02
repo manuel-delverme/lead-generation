@@ -8,8 +8,10 @@ import settings
 
 DeclarativeBase = declarative_base()
 
+
 def create_businesses_table(engine):
     DeclarativeBase.metadata.create_all(engine)
+
 
 def db_connect():
     """
@@ -18,9 +20,10 @@ def db_connect():
     """
     return create_engine(URL(**settings.DATABASE))
 
-class BusinessEntry(DeclarativeBase):
+
+class CompanyEntry(DeclarativeBase):
     """Sqlalchemy entry model"""
-    __tablename__ = "Businesses"
+    __tablename__ = "Company"
 
     id = Column(Integer, primary_key=True)
     title = Column('title', String)

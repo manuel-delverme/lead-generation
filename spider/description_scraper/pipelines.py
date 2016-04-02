@@ -8,7 +8,8 @@
 from scrapy import signals
 from scrapy.exporters import JsonLinesItemExporter
 from sqlalchemy.orm import sessionmaker
-from models import BusinessEntry, db_connect, create_businesses_table
+from models import CompanyEntry, db_connect, create_businesses_table
+
 
 class JsonWriterPipeline(object):
     def __init__(self):
@@ -36,6 +37,7 @@ class JsonWriterPipeline(object):
         self.exporter.export_item(item)
         return item
 
+
 class DatabasePipeline(object):
     def __init__(self):
         engine = db_connect()
@@ -44,7 +46,7 @@ class DatabasePipeline(object):
 
     def process_item(self, item, spider):
         session = self.Session()
-        business = BusinessEntry(**item)
+        business = CompanyEntry(**item)
 
         try:
             session.add(business)
