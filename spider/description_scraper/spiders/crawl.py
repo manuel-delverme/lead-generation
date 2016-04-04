@@ -20,9 +20,9 @@ class CrawlSpider(scrapy.Spider):
         connect_string = "dbname={} user={} host={} password={}".format("grepr", "spider", "tuamadre.net", "write_only")
         self._conn = psycopg2.connect(connect_string)
 
+    def clean_urls(self, string):
+        
     def start_requests(self):
-        yield scrapy.Request("http://www.auroracompet.it/", callback=self.parse_homepage)
-        """
         with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
             # cursor.execute('select * from "Businesses" where homepage != $$""$$ limit 100')  # crawl_time is NULL')
             cursor.execute('select DISTINCT homepage from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ OFFSET floor(random()*12345) LIMIT 1;')  # crawl_time is NULL')
@@ -70,7 +70,7 @@ class CrawlSpider(scrapy.Spider):
         for link in in_links_extractor.extract_links(response):
             yield scrapy.Request(link.url, callback=self.parse_homepage)
 
-        print self.get_languages(response)
+        item['languages'] = self.get_languages(response)
         yield None
         """
         item = Company()
@@ -85,13 +85,14 @@ class CrawlSpider(scrapy.Spider):
         yield item
         """
 
-    def all_tld_domains(self, response, link_extractor):
+    def all_tld_domains(self, response):
+        out_links_extractor = LinkExtractor(deny=(response.url), unique=True)
         tlds = []
         not_tlds = []
         netloc = scrapy.utils.url.parse_url(response.url).netloc
         basedomain = netloc[:netloc.rindex(".")]
 
-        for link in link_extractor.extract_links(response):
+        for link in out_links_extractor.extract_links(response):
             base_url = link.url[:link.url.rindex(".")]
             if base_url == basedomain:
                 tlds.append(netloc.split(".")[-1])
@@ -100,10 +101,8 @@ class CrawlSpider(scrapy.Spider):
         return tlds, set(not_tlds)
 
     def get_languages(self, response):
-        out_links_extractor = LinkExtractor(deny=(response.url), unique=True)
-
-        print self.all_tld_domains(response, out_links_extractor)
-        tlds, _ = self.all_tld_domains(response, out_links_extractor)
+        # print self.all_tld_domains(response, out_links_extractor)
+        tlds, _ = self.all_tld_domains(response)
         query_string = scrapy.utils.url.parse_url(response.url).query
         query = scrapy.utils.url.parse_qsl(query_string)
         for key, val in query:
