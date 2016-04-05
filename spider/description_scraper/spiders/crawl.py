@@ -67,7 +67,7 @@ class CrawlSpider(scrapy.Spider):
     def start_requests(self):
         with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
             # cursor.execute('select * from "Businesses" where homepage != $$""$$ limit 100')  # crawl_time is NULL')
-            cursor.execute('select DISTINCT homepage from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ OFFSET floor(random()*12345) LIMIT 1;')  # crawl_time is NULL')
+            cursor.execute('select DISTINCT * from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ OFFSET floor(random()*12345) LIMIT 1;')  # crawl_time is NULL')
             for db_entry in cursor:
                 entry_urls = self.clean_urls(db_entry['homepage'])
                 for homepage in entry_urls:
@@ -135,21 +135,27 @@ class CrawlSpider(scrapy.Spider):
 
         # "?lang=en"
         # TODO this should be on all the text
-        soup = BeautifulSoup(response.body)
-        for elem in soup.findAll(['script', 'style']):
-            elem.extract()
-        for lang in langdetect.detect_langs(soup.getText()):
+        page_txt = ''.join(self.get_page_text(response))
+        for lang in langdetect.detect_langs(page_txt):
             if lang.prob > 0.70:
                 languages.add(lang.lang)
 
         return languages
 
+    def get_page_text(self, response):
+        try:
+            return response.meta['page_text']
+        except KeyError:
+            soup = BeautifulSoup(response.body)
+            for elem in soup.findAll(['script', 'style']):
+                elem.extract()
+            text = map(unicode.lower, set(soup.getText().split("\n")))
+            response.meta['page_text'] = text
+            return text
+
     def get_name(self, response):
         name = None
-        soup = BeautifulSoup(response.body)
-        for elem in soup.findAll(['script', 'style']):
-            elem.extract()
-        txt_arr = map(unicode.lower, set(soup.getText().split("\n")))
+        txt_arr = self.get_page_text(response)
         clean_txt = [re.sub(r'[^a-zA-Z0-9.\+\-]+', ' ', m) for m in txt_arr]
         # piva_matches = [txt for txt in txt_arr if re.search("p\.{0,1}\s*iva", txt) is not None]
         for txt in clean_txt:
@@ -160,16 +166,31 @@ class CrawlSpider(scrapy.Spider):
             for company_type_regex in self.company_type_regexes:
                 name = re.search("[\w\-\!]+" + company_type_regex, txt)
                 if name:
-                    import ipdb; ipdb.set_trace()
-                    print name
+                    name = name.group()
                     break
             if name:
                 break
+            else:
+                print "fail", txt
 
         if not name:
+            print "fail all"
+            last_name = response.meta['old_db_entry']['common_name']
             import ipdb; ipdb.set_trace()
-            response.xpath("//title/text()").extract()
-            response.xpath("fallback to pg").extract()
+            if last_name:
+                for company_type_regex in self.company_type_regexes:
+                    name = re.search("[\w\-\!]+" + company_type_regex, txt)
+                    if name:
+                        name = name.group()
+                        print "regex"
+                    break
+            if not last_name and name:
+                print "last_name"
+                name = last_name
+            if not name:
+                print "title"
+                name = response.xpath("//title/text()").extract()
+        return name
 
     def related_companies(self):
         # www.site.*
