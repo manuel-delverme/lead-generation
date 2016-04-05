@@ -2,6 +2,7 @@
 import scrapy
 import json
 import scrapy.loader
+import re
 import psycopg2
 import psycopg2.extras
 import langdetect
@@ -19,6 +20,15 @@ class CrawlSpider(scrapy.Spider):
         super(CrawlSpider, self).__init__(**kwargs)
         connect_string = "dbname={} user={} host={} password={}".format("grepr", "spider", "tuamadre.net", "write_only")
         self._conn = psycopg2.connect(connect_string)
+
+        types = ["srl", "snc", "sas", "spa", "sapa", "snc"]
+        self.company_type_regexes = []
+        for company_type in types:
+            regex_str = "\s"
+            for letter in company_type:
+                regex_str += letter
+                regex_str += "[\.\s]*"
+            self.company_type_regexes.append(regex_str)
 
     def clean_urls(self, dirty_urls):
         def remove_serialization(url):
@@ -82,10 +92,10 @@ class CrawlSpider(scrapy.Spider):
 
         item = Company()
         item['languages'] = self.get_languages(response)
+        item['title'] = self.get_name(response)
         print item
         yield None
         """
-        item['title'] = self.get_name(response)
         item['languages'] = self.get_languages(response, out_links_extractor)
         item['peer_companies'] = self.get_languages(response, out_links_extractor)
         item['homepage'] = response.url
@@ -126,6 +136,8 @@ class CrawlSpider(scrapy.Spider):
         # "?lang=en"
         # TODO this should be on all the text
         soup = BeautifulSoup(response.body)
+        for elem in soup.findAll(['script', 'style']):
+            elem.extract()
         for lang in langdetect.detect_langs(soup.getText()):
             if lang.prob > 0.70:
                 languages.add(lang.lang)
@@ -133,10 +145,30 @@ class CrawlSpider(scrapy.Spider):
         return languages
 
     def get_name(self, response):
-        try:
-            response.xpath("footer -> title").extract()
+        name = None
+        soup = BeautifulSoup(response.body)
+        for elem in soup.findAll(['script', 'style']):
+            elem.extract()
+        txt_arr = map(unicode.lower, set(soup.getText().split("\n")))
+        clean_txt = [re.sub(r'[^a-zA-Z0-9.\+\-]+', ' ', m) for m in txt_arr]
+        # piva_matches = [txt for txt in txt_arr if re.search("p\.{0,1}\s*iva", txt) is not None]
+        for txt in clean_txt:
+            # piva_re = re.search("p\.{0,1}\s*iva\s*[0-9]+", match)
+            # piva = piva_re.group()
+            # code = int(re.search("[0-9]+", piva).group())
+            # match = match[:piva.start()] + match[piva.end():]
+            for company_type_regex in self.company_type_regexes:
+                name = re.search("[\w\-\!]+" + company_type_regex, txt)
+                if name:
+                    import ipdb; ipdb.set_trace()
+                    print name
+                    break
+            if name:
+                break
+
+        if not name:
+            import ipdb; ipdb.set_trace()
             response.xpath("//title/text()").extract()
-        except:
             response.xpath("fallback to pg").extract()
 
     def related_companies(self):
