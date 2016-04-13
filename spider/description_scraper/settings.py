@@ -95,14 +95,14 @@ AUTOTHROTTLE_MAX_DELAY = 60
 DOWNLOAD_HANDLERS = {'s3': None}
 DUPEFILTER_DEBUG = True
 TOR_PASSWORD = "howdoicake?"
-# LOG_LEVEL = "INFO"
+LOG_LEVEL = "INFO"
 
 DATABASE = {
     'drivername': 'postgres',
     'host': 'localhost',
     'port': '5432',
     'username': 'spider',
-    'password': 'write_only',
+    'password': '666permission',
     'database': 'grepr'
 }
 

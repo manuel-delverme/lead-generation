@@ -26,10 +26,10 @@ class CompanyEntry(DeclarativeBase):
     __tablename__ = "Company"
 
     id = Column(Integer, primary_key=True)
-    title = Column('title', String)
+    formal_name = Column('formal_name', String)
     homepage = Column('homepage', String)
-    meta_description = Column('meta_description', String, nullable=True)
-    meta_keywords = Column('meta_keywords', String, nullable=True)
+    description = Column('description', String, nullable=True)
+    keywords = Column('keywords', String, nullable=True)
     # page_text = Column('page_text', String, nullable=True)
     # dmoz_url = Column('referrer', String, nullable=True)
     crawl_time = Column('crawl_time', DateTime, default=datetime.datetime.utcnow)
@@ -44,3 +44,8 @@ class CompanyEntry(DeclarativeBase):
     cities = Column('cities', String, nullable=True)
     addresses = Column('addresses', String, nullable=True)
     phones = Column('phones', String, nullable=True)
+    employees_max = Column('employees_max', Integer, nullable=True)
+    employees_min = Column('employees_min', Integer, nullable=True)
+    funding = Column('funding', Integer, nullable=True)
+    funding_currency = Column('funding_currency', String, nullable=True)
+    peer_companies = Column('peer_companies', String, nullable=True)

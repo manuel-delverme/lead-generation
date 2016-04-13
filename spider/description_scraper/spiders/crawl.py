@@ -5,6 +5,7 @@ import scrapy.loader
 import re
 import psycopg2
 import psycopg2.extras
+from ..settings import DATABASE
 import langdetect
 import description_scraper.isocodes
 import scrapy.utils.url
@@ -18,7 +19,7 @@ class CrawlSpider(scrapy.Spider):
 
     def __init__(self, **kwargs):
         super(CrawlSpider, self).__init__(**kwargs)
-        connect_string = "dbname={} user={} host={} password={}".format("grepr", "spider", "tuamadre.net", "write_only")
+        connect_string = "dbname={} user={} host={} password={}".format("grepr", "spider", "tuamadre.net", DATABASE['password'])
         self._conn = psycopg2.connect(connect_string)
 
         types = ["srl", "snc", "sas", "spa", "sapa", "snc"]
@@ -66,8 +67,8 @@ class CrawlSpider(scrapy.Spider):
 
     def start_requests(self):
         if False:
-            homepage = "http://www.amcolori.it"
-            yield scrapy.Request(homepage, callback=self.parse_homepage, meta={'old_db_entry': None})
+            homepage = "http://www.hotelpanoramico.net"
+            yield scrapy.Request(homepage, callback=self.parse, meta={'old_db_entry': {'homepage': homepage, 'common_name': "JUST TESTING"}})
         else:
             with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                 # cursor.execute('select * from "Businesses" where homepage != $$""$$ limit 100')  # crawl_time is NULL')
@@ -81,43 +82,73 @@ class CrawlSpider(scrapy.Spider):
                         netloc = scrapy.utils.url.parse_url(homepage).netloc
                         if not netloc:
                             homepage = "http://" + homepage
-                        req = scrapy.Request(homepage, callback=self.parse_homepage, meta={'old_db_entry': db_entry})
+                        req = scrapy.Request(homepage, callback=self.parse, meta={'old_db_entry': db_entry})
                         yield req
 
-    def parse_deeper_page(self, response):
-        item = Company()
-        item['languages'] = self.get_languages(response)
-        print item
-        yield None
-
-    def parse_homepage(self, response):
+    def parse(self, response):
         # push back all the urls
         # find if export // languages
         # langues = languages_in_page
         # fom angelList only
 
-        in_links_extractor = LinkExtractor(allow=(response.url), unique=True)
+        in_links_extractor = LinkExtractor(allow=(response.meta['old_db_entry']['homepage']), unique=True)
         for link in in_links_extractor.extract_links(response):
-            yield scrapy.Request(link.url, callback=self.parse_deeper_page)
+            yield scrapy.Request(link.url, callback=self.parse, meta=response.request.meta)
 
         item = Company()
-        item['languages'] = self.get_languages(response)
         item['title'] = self.get_name(response)
-        print item
-        yield None
-        """
-        item['languages'] = self.get_languages(response, out_links_extractor)
-        item['peer_companies'] = self.get_languages(response, out_links_extractor)
-        item['homepage'] = response.url
-        item['meta_description'] = json.dumps(response.xpath("//meta[@name='description']/@content").extract())
-        item['meta_keywords'] = json.dumps(response.xpath("//meta[@name='keywords']/@content").extract())
-        item['page_text'] = ""  # not used for now
-        # item['dmoz_url'] = response.meta['dmoz_url']
+        item['languages'] = self.get_languages(response)
+
+        item['peer_companies'] = self.peer_companies(response)
+        item['crawled_url'] = response.url
+        item['description'] = self.get_description(response)
+        item['keywords'] = self.get_keywords(response)
+
+        forward_values = [
+            'homepage',
+            'addresses',
+            'revenue',
+            'phones',
+            'employees_max',
+            # 'common_name',
+            'funding',
+            'zip',
+            'title',
+            'angel_id',
+            'employees_min',
+            'angel_link',
+            'province',
+            'cities',
+            'emails',
+            'countries',
+            'pg_id'
+        ]
+        for key in forward_values:
+            item[key.replace("angel", "al")] = response.request.meta['old_db_entry'][key]
         yield item
-        """
+
+    def get_description(self, response):
+        # TODO add og, twitter etc
+        return json.dumps(
+            response.xpath("//meta[@name='description']/@content").extract()
+        )
+
+    def get_keywords(self, response):
+        # TODO add og, twitter etc
+        return json.dumps(
+            response.xpath("//meta[@name='keywords']/@content").extract()
+        )
+
+    def peer_companies(self, response):
+        # www.site.*
+        netloc = scrapy.utils.url.parse_url(response.url).netloc
+        basedomain = netloc[:netloc.rindex(".")]
+        # TODO: check DNS
+        return [basedomain + tld for tld in self.all_tld_domains(response)[0]]
 
     def all_tld_domains(self, response):
-        out_links_extractor = LinkExtractor(deny=(response.url), unique=True)
+
+        out_links_extractor = LinkExtractor(deny=(response.meta['old_db_entry']['homepage']), unique=True)
         tlds = []
         not_tlds = []
         netloc = scrapy.utils.url.parse_url(response.url).netloc
@@ -182,15 +213,18 @@ class CrawlSpider(scrapy.Spider):
                 name = re.search("[\w\-\!]+" + company_type_regex, txt)
                 if name:
                     name = name.group()
-                    import ipdb; ipdb.set_trace()
-                    print name
+                    print "regex found: name"
                     break
             if name:
                 break
 
         if not name:
             print "fail all"
-            last_name = response.meta['old_db_entry']['common_name']
+            try:
+                last_name = response.meta['old_db_entry']['common_name']
+            except Exception as e:
+                import ipdb; ipdb.set_trace()
+                print e
             if last_name:
                 # check if the old name is valid
                 for company_type_regex in self.company_type_regexes:
@@ -208,8 +242,3 @@ class CrawlSpider(scrapy.Spider):
                 print "last name is not present fallback to title"
                 name = response.xpath("//title/text()").extract()
         return name
-
-    def related_companies(self):
-        # www.site.*
-        # check DNS
-        raise NotImplementedError

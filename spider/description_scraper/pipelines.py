@@ -44,9 +44,31 @@ class DatabasePipeline(object):
         create_businesses_table(engine)
         self.Session = sessionmaker(bind=engine)
 
+    def parse(self, item):
+        import ipdb; ipdb.set_trace()
+        def find_source(item):
+            if item['al_id'] != "" and item['al_link'] != "":
+                return 1
+            elif item['pg_id'] != "":
+                return 0
+            elif item['cb_code'] != "":
+                # -> source
+                return 3
+            elif item['referrer'] != "":
+                return 2
+            else:
+                return 4
+        item['source'] = find_source(item)
+        del item['referrer']
+        del item['cb_code']
+        del item['pg_id']
+        del item['al_id']
+        del item['crawled_url']
+
     def process_item(self, item, spider):
         session = self.Session()
-        business = CompanyEntry(**item)
+        filtered_item = self.parse(item)
+        business = CompanyEntry(**filtered_item)
 
         try:
             session.add(business)
