@@ -46,6 +46,10 @@ class CompanyEntry(DeclarativeBase):
     phones = Column('phones', String, nullable=True)
     employees_max = Column('employees_max', Integer, nullable=True)
     employees_min = Column('employees_min', Integer, nullable=True)
+    revenue = Column('revenue', Integer, nullable=True)
     funding = Column('funding', Integer, nullable=True)
     funding_currency = Column('funding_currency', String, nullable=True)
     peer_companies = Column('peer_companies', String, nullable=True)
+
+    def __repr__(self):
+        return "<Company(name='%s', homepage='%s', id='%s')>" % (self.formal_name, self.homepage, self.id)

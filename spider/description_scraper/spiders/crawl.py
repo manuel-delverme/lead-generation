@@ -96,11 +96,12 @@ class CrawlSpider(scrapy.Spider):
             yield scrapy.Request(link.url, callback=self.parse, meta=response.request.meta)
 
         item = Company()
-        item['title'] = self.get_name(response)
+        item['formal_name'] = self.get_name(response)
         item['languages'] = self.get_languages(response)
 
         item['peer_companies'] = self.peer_companies(response)
         item['crawled_url'] = response.url
+        item['depth'] = response.meta['depth']
         item['description'] = self.get_description(response)
         item['keywords'] = self.get_keywords(response)
 
@@ -113,7 +114,7 @@ class CrawlSpider(scrapy.Spider):
             # 'common_name',
             'funding',
             'zip',
-            'title',
+            # 'formal_name',
             'angel_id',
             'employees_min',
             'angel_link',
@@ -210,7 +211,7 @@ class CrawlSpider(scrapy.Spider):
             # code = int(re.search("[0-9]+", piva).group())
             # match = match[:piva.start()] + match[piva.end():]
             for company_type_regex in self.company_type_regexes:
-                name = re.search("[\w\-\!]+" + company_type_regex, txt)
+                name = re.search("[\s\w\-\!]+" + company_type_regex, txt)
                 if name:
                     name = name.group()
                     print "regex found: name"
@@ -224,11 +225,11 @@ class CrawlSpider(scrapy.Spider):
                 last_name = response.meta['old_db_entry']['common_name']
             except Exception as e:
                 import ipdb; ipdb.set_trace()
-                print e
+                print "faield to find in html and no record present", e
             if last_name:
                 # check if the old name is valid
                 for company_type_regex in self.company_type_regexes:
-                    name = re.search("[\w\-\!]+" + company_type_regex, last_name)
+                    name = re.search("[\s\w\-\!]+" + company_type_regex, last_name)
                     if name:
                         import ipdb; ipdb.set_trace()
                         name = name.group()

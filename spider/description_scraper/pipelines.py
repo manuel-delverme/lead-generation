@@ -5,6 +5,7 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+import json
 from scrapy import signals
 from scrapy.exporters import JsonLinesItemExporter
 from sqlalchemy.orm import sessionmaker
@@ -45,7 +46,7 @@ class DatabasePipeline(object):
         self.Session = sessionmaker(bind=engine)
 
     def parse(self, item):
-        import ipdb; ipdb.set_trace()
+
         def find_source(item):
             if item['al_id'] != "" and item['al_link'] != "":
                 return 1
@@ -59,24 +60,49 @@ class DatabasePipeline(object):
             else:
                 return 4
         item['source'] = find_source(item)
-        del item['referrer']
-        del item['cb_code']
-        del item['pg_id']
-        del item['al_id']
-        del item['crawled_url']
+        item['languages'] = json.dumps(list(item['languages']))
+        return item
 
-    def process_item(self, item, spider):
+    def clean(self, item):
+        try:
+            item['homepage'] = json.loads(item['homepage'])
+        except ValueError:
+            pass
+
+        meta_fields = ['referrer', 'cb_code', 'pg_id', 'al_id', 'al_link', 'crawled_url', 'depth']
+        for key in item.keys():
+            if key in meta_fields:  # or not item[key]:
+                del item[key]
+        return item
+
+    def persist(self, item):
         session = self.Session()
-        filtered_item = self.parse(item)
-        business = CompanyEntry(**filtered_item)
+        business = CompanyEntry(**item)
 
         try:
             session.add(business)
             session.commit()
-        except:
+        except Exception as e:
             session.rollback()
-            raise
+            raise e
         finally:
             session.close()
+
+    def update(self, item):
+        # get the item
+        # if not update: quit
+        # else: update
+        raise NotImplemented
+
+    def process_item(self, item, spider):
+        item = self.parse(item)
+
+        if item['depth'] == 0:
+            persist = self.persist
+        else:
+            persist = self.update
+
+        filtered_item = self.clean(item)
+        item = persist(filtered_item)
 
         return item

@@ -9,7 +9,7 @@ import scrapy
 
 
 class Company(scrapy.Item):
-    title = scrapy.Field()
+    formal_name = scrapy.Field()
     homepage = scrapy.Field()
     description = scrapy.Field()
     keywords = scrapy.Field()
@@ -43,6 +43,7 @@ class Company(scrapy.Item):
     cb_id = scrapy.Field()
     dmoz_url = scrapy.Field()
     crawled_url = scrapy.Field()
+    depth = scrapy.Field()
 
 
 class Business(scrapy.Item):
