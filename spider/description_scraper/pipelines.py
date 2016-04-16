@@ -45,64 +45,89 @@ class DatabasePipeline(object):
         create_businesses_table(engine)
         self.Session = sessionmaker(bind=engine)
 
-    def parse(self, item):
+    def _find_source(self, item):
+        if item['al_id'] != "" and item['al_link'] != "":
+            return 1
+        elif item['pg_id'] != "":
+            return 0
+        elif item['cb_code'] != "":
+            # -> source
+            return 3
+        elif item['referrer'] != "":
+            return 2
+        else:
+            return 4
 
-        def find_source(item):
-            if item['al_id'] != "" and item['al_link'] != "":
-                return 1
-            elif item['pg_id'] != "":
-                return 0
-            elif item['cb_code'] != "":
-                # -> source
-                return 3
-            elif item['referrer'] != "":
-                return 2
-            else:
-                return 4
-        item['source'] = find_source(item)
-        item['languages'] = json.dumps(list(item['languages']))
+    def _add_meta_values(self, item):
+        item['source'] = self._find_source(item)
         return item
 
-    def clean(self, item):
-        try:
-            item['homepage'] = json.loads(item['homepage'])
-        except ValueError:
-            pass
+    def _clean(self, item):
+        # json can't handle sets
+        item['languages'] = json.dumps(list(item['languages']))
 
+        # remove useless json serialization
+        for key in ['homepage', 'formal_name', 'province', 'zip']:
+            try:
+                item[key] = json.loads(item[key])
+            except ValueError:
+                pass
+
+        # some fields should be lists
+        for key in ['emails', 'countries', 'cities', 'addresses']:
+            try:
+                item_obj = json.loads(item[key])
+            except ValueError:
+                print item['homepage'], ": could not decode", item[key], "as json"
+            else:
+                if type(item_obj) == list:
+                    continue
+                else:
+                    item[key] = json.dumps([item_obj])
+
+        # some fields are not needded anymore
         meta_fields = ['referrer', 'cb_code', 'pg_id', 'al_id', 'al_link', 'crawled_url', 'depth']
         for key in item.keys():
-            if key in meta_fields:  # or not item[key]:
+            if key in meta_fields:
                 del item[key]
         return item
+
+    def process_item(self, item, spider):
+        if item['depth'] == 0:
+            store = self.persist
+        else:
+            store = self.update
+
+        import ipdb; ipdb.set_trace()
+
+        parsed_item = self.parse(item)
+        store(parsed_item)
+
+    def parse(self, item):
+        item = self._add_meta_values(item)
+        item = self._clean(item)
+        return item
+
+    def update(self, item):
+        session = self.Session()
+        company = session.query(CompanyEntry).filter_by(homepage=item['homepage']).first()
+
+        langs = set(json.loads(company.languages))
+        langs.update(json.loads(item['languages']))
+        company.languages = json.dumps(list(langs))
+        session.add(company)
+        session.commit()
 
     def persist(self, item):
         session = self.Session()
         business = CompanyEntry(**item)
 
         try:
-            session.add(business)
+            item_id = session.add(business)
             session.commit()
         except Exception as e:
             session.rollback()
             raise e
         finally:
             session.close()
-
-    def update(self, item):
-        # get the item
-        # if not update: quit
-        # else: update
-        raise NotImplemented
-
-    def process_item(self, item, spider):
-        item = self.parse(item)
-
-        if item['depth'] == 0:
-            persist = self.persist
-        else:
-            persist = self.update
-
-        filtered_item = self.clean(item)
-        item = persist(filtered_item)
-
-        return item
+        return item_id

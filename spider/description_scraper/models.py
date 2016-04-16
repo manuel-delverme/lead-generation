@@ -35,7 +35,6 @@ class CompanyEntry(DeclarativeBase):
     crawl_time = Column('crawl_time', DateTime, default=datetime.datetime.utcnow)
     province = Column('province', String, nullable=True)
     zip = Column('zip', String, nullable=True)
-    name = Column('common_name', String, nullable=True)
     languages = Column('languages', String, nullable=True)
     # pg = 0, al = 1, dmoz = 2, cb = 3
     source = Column('source', Integer, nullable=True)

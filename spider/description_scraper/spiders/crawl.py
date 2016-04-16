@@ -91,7 +91,8 @@ class CrawlSpider(scrapy.Spider):
         # langues = languages_in_page
         # fom angelList only
 
-        in_links_extractor = LinkExtractor(allow=(response.meta['old_db_entry']['homepage']), unique=True)
+        homepage_url = self.clean_urls(response.meta['old_db_entry']['homepage'])[0]
+        in_links_extractor = LinkExtractor(allow=(homepage_url), unique=True)
         for link in in_links_extractor.extract_links(response):
             yield scrapy.Request(link.url, callback=self.parse, meta=response.request.meta)
 
@@ -214,13 +215,13 @@ class CrawlSpider(scrapy.Spider):
                 name = re.search("[\s\w\-\!]+" + company_type_regex, txt)
                 if name:
                     name = name.group()
-                    print "regex found: name"
+                    # print "regex found: name"
                     break
             if name:
                 break
 
         if not name:
-            print "fail all"
+            # print "fail all"
             try:
                 last_name = response.meta['old_db_entry']['common_name']
             except Exception as e:
@@ -236,7 +237,7 @@ class CrawlSpider(scrapy.Spider):
                         print "regex"
                     break
             if last_name and not name:
-                print "old name is not valid, use it anyway"
+                # print "old name is not valid, use it anyway"
                 name = last_name
             if not name:
                 import ipdb; ipdb.set_trace()

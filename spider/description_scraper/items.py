@@ -18,7 +18,6 @@ class Company(scrapy.Item):
     province = scrapy.Field()
     zip = scrapy.Field()
 
-    name = scrapy.Field()
     languages = scrapy.Field()
 
     # 0,1,2,3
