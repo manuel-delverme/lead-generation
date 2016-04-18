@@ -5,6 +5,7 @@ import scrapy.loader
 import re
 import psycopg2
 import psycopg2.extras
+import itertools
 from ..settings import DATABASE
 import langdetect
 import description_scraper.isocodes
@@ -19,6 +20,7 @@ class CrawlSpider(scrapy.Spider):
 
     def __init__(self, **kwargs):
         super(CrawlSpider, self).__init__(**kwargs)
+        self.ignoreBreakpoint = []
         connect_string = "dbname={} user={} host={} password={}".format("grepr", "spider", "tuamadre.net", DATABASE['password'])
         self._conn = psycopg2.connect(connect_string)
 
@@ -55,35 +57,42 @@ class CrawlSpider(scrapy.Spider):
             elif type(entry_urls) == list:
                 pass
             else:
-                import ipdb
-                ipdb.set_trace()
+                if "entry_urls is fucked up" not in self.ignoreBreakpoint:
+                    import ipdb
+                    ipdb.set_trace()
+                    print "entry_urls is fucked up"
 
         if entry_urls is None:
-            import ipdb
-            ipdb.set_trace()
+            if "entry_urls is None" not in self.ignoreBreakpoint:
+                import ipdb
+                ipdb.set_trace()
+                print "entry_urls is None"
 
         entry_urls = [remove_serialization(url) for url in entry_urls]
         return entry_urls
 
+    def fetch_rows(self, lower, batch_size):
+        with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            cursor.execute('select * from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ OFFSET %(lower)s LIMIT %(size)s;', {'lower': lower, 'size': batch_size})
+            for db_entry in cursor:
+                entry_urls = self.clean_urls(db_entry['homepage'])
+                for homepage in entry_urls:
+                    if '"' in homepage:
+                        if "bad formatting" not in self.ignoreBreakpoint:
+                            import ipdb; ipdb.set_trace()
+                            print "bad formatting"
+                    netloc = scrapy.utils.url.parse_url(homepage).netloc
+                    if not netloc:
+                        homepage = "http://" + homepage
+                    req = scrapy.Request(homepage, callback=self.parse, meta={'old_db_entry': db_entry})
+                    yield req
+
     def start_requests(self):
-        if False:
-            homepage = "http://www.hotelpanoramico.net"
-            yield scrapy.Request(homepage, callback=self.parse, meta={'old_db_entry': {'homepage': homepage, 'common_name': "JUST TESTING"}})
-        else:
-            with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                # cursor.execute('select * from "Businesses" where homepage != $$""$$ limit 100')  # crawl_time is NULL')
-                cursor.execute('select DISTINCT * from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ OFFSET floor(random()*12345) LIMIT 1;')  # crawl_time is NULL')
-                for db_entry in cursor:
-                    entry_urls = self.clean_urls(db_entry['homepage'])
-                    for homepage in entry_urls:
-                        if '"' in homepage:
-                            import ipdb
-                            ipdb.set_trace()
-                        netloc = scrapy.utils.url.parse_url(homepage).netloc
-                        if not netloc:
-                            homepage = "http://" + homepage
-                        req = scrapy.Request(homepage, callback=self.parse, meta={'old_db_entry': db_entry})
-                        yield req
+        batch_size = 100
+        for step in itertools.count():
+            lower = step * batch_size
+            for request in self.fetch_rows(lower, batch_size):
+                yield request
 
     def parse(self, response):
         # push back all the urls
@@ -91,6 +100,8 @@ class CrawlSpider(scrapy.Spider):
         # langues = languages_in_page
         # fom angelList only
 
+        if not has_attr(response, 'body_as_unicode'):
+            yield None
         homepage_url = self.clean_urls(response.meta['old_db_entry']['homepage'])[0]
         in_links_extractor = LinkExtractor(allow=(homepage_url), unique=True)
         for link in in_links_extractor.extract_links(response):
@@ -157,16 +168,16 @@ class CrawlSpider(scrapy.Spider):
         basedomain = netloc[:netloc.rindex(".")]
 
         for link in out_links_extractor.extract_links(response):
-            base_url = link.url[:link.url.rindex(".")]
-            if base_url == basedomain:
-                tlds.append(netloc.split(".")[-1])
-            else:
-                not_tlds.append(netloc)
+            if "." in link.url:
+                base_url = link.url[:link.url.rindex(".")]
+                if base_url == basedomain:
+                    tlds.append(netloc.split(".")[-1])
+                else:
+                    not_tlds.append(netloc)
         return tlds, set(not_tlds)
 
     def get_languages(self, response):
         languages = set()
-        # print self.all_tld_domains(response, out_links_extractor)
         tlds, _ = self.all_tld_domains(response)
         languages.update(tlds)
 
@@ -212,35 +223,31 @@ class CrawlSpider(scrapy.Spider):
             # code = int(re.search("[0-9]+", piva).group())
             # match = match[:piva.start()] + match[piva.end():]
             for company_type_regex in self.company_type_regexes:
-                name = re.search("[\s\w\-\!]+" + company_type_regex, txt)
-                if name:
-                    name = name.group()
-                    # print "regex found: name"
+                name_match = re.search("[\s\w\-\!]+" + company_type_regex, txt)
+                if name_match:
+                    name = name_match.group()
                     break
             if name:
                 break
 
         if not name:
-            # print "fail all"
             try:
                 last_name = response.meta['old_db_entry']['common_name']
             except Exception as e:
-                import ipdb; ipdb.set_trace()
-                print "faield to find in html and no record present", e
+                if "failed to find in html and no record present" not in self.ignoreBreakpoint:
+                    import ipdb; ipdb.set_trace()
+                    print "failed to find in html and no record present", e
             if last_name:
                 # check if the old name is valid
                 for company_type_regex in self.company_type_regexes:
-                    name = re.search("[\s\w\-\!]+" + company_type_regex, last_name)
-                    if name:
-                        import ipdb; ipdb.set_trace()
-                        name = name.group()
-                        print "regex"
+                    name_match = re.search("[\s\w\-\!]+" + company_type_regex, last_name)
+                    name = name_match.group()
                     break
             if last_name and not name:
-                # print "old name is not valid, use it anyway"
                 name = last_name
             if not name:
-                import ipdb; ipdb.set_trace()
-                print "last name is not present fallback to title"
+                if "failed to find in html and no record present" not in self.ignoreBreakpoint:
+                    import ipdb; ipdb.set_trace()
+                    print "last name is not present fallback to title"
                 name = response.xpath("//title/text()").extract()
         return name

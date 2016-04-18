@@ -96,21 +96,30 @@ class DatabasePipeline(object):
         if item['depth'] == 0:
             store = self.persist
         else:
-            store = self.update
-
-        import ipdb; ipdb.set_trace()
+            store = self.update_or_persist
 
         parsed_item = self.parse(item)
         store(parsed_item)
 
     def parse(self, item):
+        crawled_url = item['crawled_url']
         item = self._add_meta_values(item)
         item = self._clean(item)
+        print "added", crawled_url
         return item
+
+    def update_or_persist(self, item):
+        try:
+            self.update(item)
+        except ValueError:
+            self.persist(item)
 
     def update(self, item):
         session = self.Session()
         company = session.query(CompanyEntry).filter_by(homepage=item['homepage']).first()
+        if not company:
+            print "FAILED: parent not found", item['homepage']
+            raise ValueError
 
         langs = set(json.loads(company.languages))
         langs.update(json.loads(item['languages']))
@@ -120,10 +129,10 @@ class DatabasePipeline(object):
 
     def persist(self, item):
         session = self.Session()
-        business = CompanyEntry(**item)
+        company = CompanyEntry(**item)
 
         try:
-            item_id = session.add(business)
+            item_id = session.add(company)
             session.commit()
         except Exception as e:
             session.rollback()
