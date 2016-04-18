@@ -100,7 +100,7 @@ class CrawlSpider(scrapy.Spider):
         # langues = languages_in_page
         # fom angelList only
 
-        if not has_attr(response, 'body_as_unicode'):
+        if not hasattr(response, 'body_as_unicode'):
             yield None
         homepage_url = self.clean_urls(response.meta['old_db_entry']['homepage'])[0]
         in_links_extractor = LinkExtractor(allow=(homepage_url), unique=True)
@@ -241,8 +241,9 @@ class CrawlSpider(scrapy.Spider):
                 # check if the old name is valid
                 for company_type_regex in self.company_type_regexes:
                     name_match = re.search("[\s\w\-\!]+" + company_type_regex, last_name)
-                    name = name_match.group()
-                    break
+                    if name_match:
+                        name = name_match.group()
+                        break
             if last_name and not name:
                 name = last_name
             if not name:
