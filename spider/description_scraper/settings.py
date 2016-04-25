@@ -21,7 +21,7 @@ USER_AGENT = "Googlebot/2.1 ( http://www.google.com/bot.html)"
 
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 60
+CONCURRENT_REQUESTS = 30
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
@@ -29,7 +29,7 @@ CONCURRENT_REQUESTS = 60
 # DOWNLOAD_DELAY = 1
 
 # The download delay setting will honor only one of:
-CONCURRENT_REQUESTS_PER_DOMAIN = 1
+CONCURRENT_REQUESTS_PER_DOMAIN = 3
 # CONCURRENT_REQUESTS_PER_IP = 1
 
 # Disable cookies (enabled by default)
@@ -77,7 +77,7 @@ ITEM_PIPELINES = {
 # NOTE: AutoThrottle will honour the standard settings for concurrency and delay
 AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY = 5
+AUTOTHROTTLE_START_DELAY = 0.10
 # The maximum download delay to be set in case of high latencies
 AUTOTHROTTLE_MAX_DELAY = 60
 # Enable showing throttling stats for every response received:
@@ -106,5 +106,5 @@ DATABASE = {
     'database': 'grepr'
 }
 
-DEPTH_LIMIT = 2
-DEPTH_PRIORITY = -1
+DEPTH_LIMIT = 1
+# DEPTH_PRIORITY = -1
