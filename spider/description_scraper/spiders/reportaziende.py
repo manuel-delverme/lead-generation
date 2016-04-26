@@ -9,14 +9,12 @@ from description_scraper.items import CompaniesRA
 class ReportAziendeSpider(CrawlSpider):
     name = "m.reportaziende.it"
     handle_httpstatus_list = [200]
-    allowed_domains = ["reportaziende.org"]
+    allowed_domains = ["reportaziende.it]
     start_urls = [ "http://www.reportaziende.it/" ]
 
     def parse_companies:
         item = CompaniesRA()
-
-
-       yield item
+        yield item
 
     def parse_w_links:
         for trgt in response.xpath("//ul[@class='carosello']/li/a/@href"):
