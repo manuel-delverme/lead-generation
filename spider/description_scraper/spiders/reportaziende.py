@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-import threading
 import logging
-import time
-import datetime
 import scrapy
-import requests
-import itertools
-import collections
 from extruct.w3cmicrodata import MicrodataExtractor
 
 from description_scraper.items import Business
@@ -18,8 +12,13 @@ class ReportAziendeSpider(CrawlSpider):
     allowed_domains = ["reportaziende.org"]
     start_urls = [ "http://www.reportaziende.it/" ]
 
-    def parse_w_collegamenti:
+    def parse_companies:
         pass
+
+    def parse_w_links:
+        for trgt in response.xpath("//ul[@class='carosello']/li/a/@href"):
+        url = response.urljoin(trgt)
+        yeld scrapy.Request(url, self.parse_companies)
 
     def parse(self, response):
         for trgt in response.xpath("///ul[@class='w_collegamenti']/li/a/@href").extract() :
