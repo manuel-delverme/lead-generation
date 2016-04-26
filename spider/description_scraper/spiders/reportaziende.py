@@ -3,8 +3,8 @@ import logging
 import scrapy
 from extruct.w3cmicrodata import MicrodataExtractor
 
-from description_scraper.items import Business
-from scrapy.spiders import CrawlSpider
+from description_scraper.items import CompaniesRA
+#from scrapy.spiders import CrawlSpider
 
 class ReportAziendeSpider(CrawlSpider):
     name = "m.reportaziende.it"
@@ -13,7 +13,10 @@ class ReportAziendeSpider(CrawlSpider):
     start_urls = [ "http://www.reportaziende.it/" ]
 
     def parse_companies:
-        pass
+        item = CompaniesRA()
+
+
+       yield item
 
     def parse_w_links:
         for trgt in response.xpath("//ul[@class='carosello']/li/a/@href"):
