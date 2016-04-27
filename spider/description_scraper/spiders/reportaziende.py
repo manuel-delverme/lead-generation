@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import scrapy
 from extruct.w3cmicrodata import MicrodataExtractor
 
@@ -9,11 +8,12 @@ from description_scraper.items import CompaniesRA
 class ReportAziendeSpider(CrawlSpider):
     name = "m.reportaziende.it"
     handle_httpstatus_list = [200]
-    allowed_domains = ["reportaziende.it]
+    allowed_domains = ["reportaziende.it"]
     start_urls = [ "http://www.reportaziende.it/" ]
 
     def parse_companies:
         item = CompaniesRA()
+
         yield item
 
     def parse_w_links:
