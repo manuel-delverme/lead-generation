@@ -63,3 +63,4 @@ description_scraper/crawl_data.jsonlines
 wikipedia-word-frequency
 data/
 .idea/
+crawls/
