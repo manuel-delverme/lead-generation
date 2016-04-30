@@ -1,30 +1,28 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from extruct.w3cmicrodata import MicrodataExtractor
+from items import CompaniesRA
 
-from description_scraper.items import CompaniesRA
-#from scrapy.spiders import CrawlSpider
-
-class ReportAziendeSpider(CrawlSpider):
+class ReportAziendeSpider(scrapy.Spider):
     name = "m.reportaziende.it"
     handle_httpstatus_list = [200]
     allowed_domains = ["reportaziende.it"]
     start_urls = [ "http://www.reportaziende.it/" ]
 
-    def parse_companies:
-        item = CompaniesRA()
+    def parse_companies():
+	item = companiesRA()
 
         yield item
 
-    def parse_w_links:
+    def parse_w_links():
         for trgt in response.xpath("//ul[@class='carosello']/li/a/@href"):
-        url = response.urljoin(trgt)
-        yeld scrapy.Request(url, self.parse_companies)
+        	url = response.urljoin(trgt)
+        	yield scrapy.Request(url, self.parse_companies)
+
 
     def parse(self, response):
         for trgt in response.xpath("///ul[@class='w_collegamenti']/li/a/@href").extract() :
             url = response.urljoin(trgt)
-            yeld scrapy.Request(url, self.parse_w_collegamenti )
+            yield scrapy.Request(url, self.parse_w_collegamenti )
 
 
 
