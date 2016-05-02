@@ -73,7 +73,9 @@ class CrawlSpider(scrapy.Spider):
 
     def fetch_rows(self, lower, batch_size):
         with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-            cursor.execute('select * from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ and id > 5705541 order by id OFFSET %(lower)s LIMIT %(size)s;', {'lower': lower, 'size': batch_size})
+            cursor.execute('select * from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ and id > 6159270 order by id OFFSET %(lower)s LIMIT %(size)s;', {'lower': lower, 'size': batch_size})
+            if not cursor.rowcount:
+                raise StopIteration
             for db_entry in cursor:
                 entry_urls = self.clean_urls(db_entry['homepage'])
                 for homepage in entry_urls:
