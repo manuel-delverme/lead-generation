@@ -15,6 +15,10 @@ from bs4 import BeautifulSoup
 from description_scraper.items import Company
 
 
+class OutOfUrls(Exception):
+    pass
+
+
 class CrawlSpider(scrapy.Spider):
     name = "website_crawler"
 
@@ -75,7 +79,7 @@ class CrawlSpider(scrapy.Spider):
         with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
             cursor.execute('select * from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ and id > 6159270 order by id OFFSET %(lower)s LIMIT %(size)s;', {'lower': lower, 'size': batch_size})
             if not cursor.rowcount:
-                raise StopIteration
+                raise OutOfUrls
             for db_entry in cursor:
                 entry_urls = self.clean_urls(db_entry['homepage'])
                 for homepage in entry_urls:
@@ -93,8 +97,11 @@ class CrawlSpider(scrapy.Spider):
         batch_size = 100
         for step in itertools.count():
             lower = step * batch_size
-            for request in self.fetch_rows(lower, batch_size):
-                yield request
+            try:
+                for request in self.fetch_rows(lower, batch_size):
+                    yield request
+            except OutOfUrls:
+                return
 
     def parse(self, response):
         # push back all the urls

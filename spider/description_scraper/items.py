@@ -7,34 +7,6 @@
 
 import scrapy
 
-
-class CompaniesRA(scrapy.Item):
-    deniminazione = scrapy.Field()
-    natura_giuridica = scrapy.Field()
-    indirizzo = scrapy.Field()
-    cap = scrapy.Field()
-    comune = scrapy.Field()
-    provincia = scrapy.Field()
-    ssn = scrapy.Field()
-    piva = scrapy.Field()
-    cateco = scrapy.Field()
-    desc_cateco = scrapy.Field()
-    operativa = scrapy.Field()
-    indici = dict ()
-    anno = [
-        fatturato = scrapy.Field(),
-        mol = scrapy.Field(),
-        roa = scrapy.Field(),
-        utile/perdita = scrapy.Field(),
-        oneri_fin = scrapy.Field(),
-        totale_passivita = scrapy.Field(),
-        rapporto_indebitamento = scrapy.Field(),
-        roi = scrapy.Field(),
-        ros = scrapy.Field(),
-        roe = scrapy.Field(),
-        addetti = scrapy.Field()
-    ]
-
 class Company(scrapy.Item):
     formal_name = scrapy.Field()
     homepage = scrapy.Field()
