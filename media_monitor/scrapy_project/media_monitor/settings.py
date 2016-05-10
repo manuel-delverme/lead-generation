@@ -19,7 +19,7 @@ NEWSPIDER_MODULE = 'media_monitor.spiders'
 # USER_AGENT = 'media_monitor (+http://www.yourdomain.com)'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 1 # 32
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html# download-delay
@@ -61,9 +61,11 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 16
 
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'media_monitor.pipelines.SomePipeline': 300,
-# }
+ITEM_PIPELINES = {
+   'media_monitor.pipelines.ArticleParsePipeline': 200,
+   'media_monitor.pipelines.CacheBagOfWordsPipeline': 500,
+   'media_monitor.pipelines.StoreArticlePipeline': 800,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
@@ -84,4 +86,4 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # HTTPCACHE_IGNORE_HTTP_CODES=[]
 # nHTTPCACHE_STORAGE='scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-LOG_LEVEL = "INFO"
+LOG_LEVEL = "DEBUG"

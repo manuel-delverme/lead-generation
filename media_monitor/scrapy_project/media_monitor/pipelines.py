@@ -7,6 +7,7 @@ class ArticleParsePipeline(object):
         item = MediaArticle()
 
         article = Article(item.text, lang="it")
+        # article.set_text/body
         # article.download(html=response.body)
         article.parse()
 
@@ -19,7 +20,7 @@ class ArticleParsePipeline(object):
 
 class CacheBagOfWordsPipeline(object):
     def process_item(self, item, spider):
-        word_set = set(newspaper.nlp.split_words(item['text'].text)))
+        word_set = set(newspaper.nlp.split_words(item['text'].text))
         persist_to_db(word_set)
 
 class StoreArticlePipeline(object):
