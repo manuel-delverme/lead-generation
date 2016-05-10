@@ -2,7 +2,6 @@ import scrapy
 import scrapy.spiders
 import feedparser
 import time
-from scrapy import log
 from media_monitor.items import MediaArticle
 
 
@@ -18,9 +17,10 @@ class RssFetcher(scrapy.spiders.XMLFeedSpider):
         start_time = time.time()
 
         while True:
+            rss_list.seek(0, 0)
             for rss_url in rss_list:
                 yield scrapy.Request(rss_url.rstrip(), self.parse)
-            time_out = (5*60) - (time.time() - start_time)
+            time_out = (30*60) - (time.time() - start_time)
             if time_out > 0:
                 print "done; restarting in", time_out
                 time.sleep(time_out)

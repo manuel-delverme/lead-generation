@@ -42,10 +42,13 @@ class StoreArticlePipeline(object):
     def process_item(self, item, spider):
         _, netloc, path, query, _ = urlparse.urlsplit(item['url'])
         base_path = "/news/{}/{}/{}".format(netloc, path.replace("/", "|")[1:], query)
+
         if base_path.endswith("/"):
             base_path = base_path.rstrip("/")
-        text_path = base_path + "/text"
+        if len(base_path) > 230:
+            base_path = base_path[:230]
 
+        text_path = base_path + "/text"
 	mkdir_p(base_path)
 
         with open(text_path, "w") as f:
