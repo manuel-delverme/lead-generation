@@ -20,18 +20,17 @@ class RssFetcher(scrapy.spiders.XMLFeedSpider):
         while True:
             for rss_url in rss_list:
                 yield scrapy.Request(rss_url.rstrip(), self.parse)
-            import ipdb; ipdb.set_trace()
             time_out = (5*60) - (time.time() - start_time)
-            time.sleep(time_out)
+            if time_out > 0:
+                print "done; restarting in", time_out
+                time.sleep(time_out)
 
     def parse_node(self, response, node):
         for full_url in node.xpath('link/text()').extract():
             yield scrapy.Request(full_url, self.parse_news, meta=response.meta)
 
     def parse_news(self, response):
-        import ipdb; ipdb.set_trace()
         item = MediaArticle()
         item['text'] = response.body
+        item['url'] = response.url
         yield item
-
-

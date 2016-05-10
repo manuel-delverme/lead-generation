@@ -9,7 +9,7 @@ import scrapy
 
 
 class MediaArticle(scrapy.Item):
-    link = scrapy.Field()
+    url = scrapy.Field()
     title = scrapy.Field()
     text = scrapy.Field()
     summary = scrapy.Field()
