@@ -13,17 +13,18 @@ class RssFetcher(scrapy.spiders.XMLFeedSpider):
     itertag = 'item'
 
     def start_requests(self):
-        rss_list = open("rss_list.csv")
-        start_time = time.time()
 
         while True:
-            rss_list.seek(0, 0)
-            for rss_url in rss_list:
-                yield scrapy.Request(rss_url.rstrip(), self.parse)
-            time_out = (30*60) - (time.time() - start_time)
-            if time_out > 0:
-                print "done; restarting in", time_out
-                time.sleep(time_out)
+            with open("rss_list.csv") as rss_list:
+                start_time = time.time()
+                for rss_url in rss_list:
+                    yield scrapy.Request(rss_url.rstrip(), self.parse)
+                time_out = (30*60) - (time.time() - start_time)
+                if time_out > 0:
+                    print "done; restarting in", time_out
+                    time.sleep(time_out)
+                else:
+                    print "done; no timeout", time_out
 
     def parse_node(self, response, node):
         for full_url in node.xpath('link/text()').extract():
