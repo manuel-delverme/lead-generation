@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import newspaper
-import urlparse
+import json
+import helper
 from newspaper import Article
 from media_monitor.items import MediaArticle
 import errno
 import os
 import pickle
+from scrapy.utils.serialize import ScrapyJSONEncoder
 
 
 def mkdir_p(path):
@@ -39,23 +41,18 @@ class CacheBagOfWordsPipeline(object):
         return item
 
 class StoreArticlePipeline(object):
+
     def process_item(self, item, spider):
-        _, netloc, path, query, _ = urlparse.urlsplit(item['url'])
-        base_path = "/news/{}/{}/{}".format(netloc, path.replace("/", "|")[1:], query)
-
-        if base_path.endswith("/"):
-            base_path = base_path.rstrip("/")
-        if len(base_path) > 230:
-            base_path = base_path[:230]
-
+        base_path = helper.get_news_file_url(item['url'])
         text_path = base_path + "/text"
 	mkdir_p(base_path)
 
         with open(text_path, "w") as f:
-            pickle.dump(item['text'], f)
+            f.write(item['text'].encode('utf-8'))
             del item['text']
 
+        _encoder = ScrapyJSONEncoder()
         metadata_path = base_path + "/metadata"
         with open(metadata_path, "w") as f:
-            pickle.dump(item, f)
+            json.dump(_encoder.encode(item), f)
         return item

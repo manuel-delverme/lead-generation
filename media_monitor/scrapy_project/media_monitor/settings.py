@@ -19,7 +19,7 @@ NEWSPIDER_MODULE = 'media_monitor.spiders'
 # USER_AGENT = 'media_monitor (+http://www.yourdomain.com)'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 1 # 32
+CONCURRENT_REQUESTS = 32
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html# download-delay
@@ -86,4 +86,6 @@ ITEM_PIPELINES = {
 # HTTPCACHE_IGNORE_HTTP_CODES=[]
 # nHTTPCACHE_STORAGE='scrapy.extensions.httpcache.FilesystemCacheStorage'
 
+DOWNLOAD_HANDLERS = {'s3': None}
 LOG_LEVEL = "INFO"
+DUPEFILTER_CLASS = 'media_monitor.dupefilter.NewsRFPDupeFilter'
