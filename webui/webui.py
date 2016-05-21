@@ -1,13 +1,16 @@
 from flask import Flask
+from flask import render_template
+from flask_bootstrap import Bootstrap
 import os
 import re
 import pickle
 import subprocess
 app = Flask(__name__)
+Bootstrap(app)
 
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    return render_template('index.html')
 
 @app.route('/search/<search_term>')
 def show_search(search_term):
@@ -37,4 +40,4 @@ def grep(path, needle):
     return res
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", port=443, debug=True)
