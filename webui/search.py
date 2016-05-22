@@ -215,24 +215,34 @@ def get_name(self, response):
 
 def fetch_rows(_conn, lower, batch_size):
     with _conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-        cursor.execute( """
-            SELECT homepage, languages
+        query = """
+            SELECT *
             FROM "Company"
-            WHERE languages LIKE '%it%' and languages LIKE '%en%'
-                AND formal_name ~ '%\ss[\.\s]*r[\.\s]*l[\.\s]*%'"""
-            #    ORDER BY id OFFSET %(lower)s LIMIT %(size)s;""",
-            #{'lower': lower, 'size': batch_size}
+            WHERE
+                languages LIKE '%%it%%' and languages LIKE '%%en%%'
+                AND formal_name ~ '\ss[\.\s]*r[\.\s]*l[\.\s]*'
+                AND (
+        """
+
+        search_keywords = ["IT", "%%consulen%%", "%%informat%%"]
+        for keyword in search_keywords:
+            query += "keywords like '{}' OR ".format(keyword)
+        query = query[:-3]
+        query += """)
+                ORDER BY id OFFSET %(lower)s LIMIT %(size)s;
+            """
+        cursor.execute(
+            query,
+            {'lower': lower, 'size': batch_size}
         )
-        import ipdb; ipdb.set_trace()
         if not cursor.rowcount:
             raise OutOfUrls
         for db_entry in cursor:
+            import ipdb; ipdb.set_trace()
+            # with _conn.cursor() as select_cursor:
+                # select_cursor.execute('SELECT * FROM "Company" WHERE homepage like "%%%(homepage)s%%"', {'homepage':})
             entry_urls = clean_urls(db_entry['homepage'])
             for homepage in entry_urls:
-                if '"' in homepage:
-                    if "bad formatting" not in self.ignoreBreakpoint:
-                        import ipdb; ipdb.set_trace()
-                        print("bad formatting")
                 netloc = scrapy.utils.url.parse_url(homepage).netloc
                 if not netloc:
                     homepage = "http://" + homepage
