@@ -18,7 +18,6 @@ from description_scraper.items import Company
 class OutOfUrls(Exception):
     pass
 
-
 class CrawlSpider(scrapy.Spider):
     name = "website_crawler"
 
@@ -126,7 +125,9 @@ class CrawlSpider(scrapy.Spider):
         item['depth'] = response.meta['depth']
         item['description'] = self.get_description(response)
         item['keywords'] = self.get_keywords(response)
+        item['body'] = response.body
 
+        # values to forward from the old db
         forward_values = [
             'homepage',
             'addresses',
