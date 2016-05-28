@@ -9,6 +9,7 @@ import itertools
 from ..settings import DATABASE
 import langdetect
 import description_scraper.isocodes
+import tldextract
 import scrapy.utils.url
 from scrapy.linkextractors import LinkExtractor
 from bs4 import BeautifulSoup
@@ -23,7 +24,7 @@ class CrawlSpider(scrapy.Spider):
 
     def __init__(self, **kwargs):
         super(CrawlSpider, self).__init__(**kwargs)
-        self.ignoreBreakpoint = []
+        self.ignoreBreakpoint = ["failed to find in html and no record present"]
         connect_string = "dbname={} user={} host={} password={}".format("grepr", "spider", "tuamadre.net", DATABASE['password'])
         self._conn = psycopg2.connect(connect_string)
 
@@ -77,7 +78,8 @@ class CrawlSpider(scrapy.Spider):
     def fetch_rows(self, lower, batch_size):
         with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
             # cursor.execute('select * from "Businesses" where homepage != $$""$$ and pg_id != $$""$$ and id > 6159270 order by id OFFSET %(lower)s LIMIT %(size)s;', {'lower': lower, 'size': batch_size})
-            cursor.execute('select 1')
+            cursor.execute('SELECT * FROM "Businesses" order by id OFFSET %(lower)s LIMIT %(size)s;', {'lower': lower, 'size': batch_size})
+            # cursor.execute('select 1')
             if not cursor.rowcount:
                 raise OutOfUrls
             for db_entry in cursor:
@@ -117,6 +119,7 @@ class CrawlSpider(scrapy.Spider):
             yield scrapy.Request(link.url, callback=self.parse, meta=response.request.meta)
 
         item = Company()
+        import ipdb; ipdb.set_trace()
         item['formal_name'] = self.get_name(response)
         item['languages'] = self.get_languages(response)
 
@@ -165,27 +168,29 @@ class CrawlSpider(scrapy.Spider):
 
     def peer_companies(self, response):
         # www.site.*
-        netloc = scrapy.utils.url.parse_url(response.url).netloc
-        basedomain = netloc[:netloc.rindex(".")]
+        # netloc = scrapy.utils.url.parse_url(response.url).netloc
+        extraction = tldextract.extract(response.url)
+        domain = extraction.domain
         # TODO: check DNS
-        return [basedomain + tld for tld in self.all_tld_domains(response)[0]]
+        tld_domains = [domain + "." + tld for tld in self.all_tld_domains(response)[0]]
+        tld_domains.remove(extraction.registered_domain)
+        return tld_domains
 
     def all_tld_domains(self, response):
-
         out_links_extractor = LinkExtractor(deny=(response.meta['old_db_entry']['homepage']), unique=True)
         tlds = []
         not_tlds = []
-        netloc = scrapy.utils.url.parse_url(response.url).netloc
-        basedomain = netloc[:netloc.rindex(".")]
+        # netloc = scrapy.utils.url.parse_url(response.url).netloc
+        # basedomain = netloc[:netloc.rindex(".")]
+        domain = tldextract.extract(response.url).domain
 
         for link in out_links_extractor.extract_links(response):
-            if "." in link.url:
-                base_url = link.url[:link.url.rindex(".")]
-                if base_url == basedomain:
-                    tlds.append(netloc.split(".")[-1])
-                else:
-                    not_tlds.append(netloc)
-        return tlds, set(not_tlds)
+            link_url = tldextract.extract(link.url)
+            if link_url.domain == domain:
+                tlds.append(link_url.suffix)
+            else:
+                not_tlds.append(link_url.registered_domain)
+        return set(tlds), set(not_tlds)
 
     def get_languages(self, response):
         languages = set()
