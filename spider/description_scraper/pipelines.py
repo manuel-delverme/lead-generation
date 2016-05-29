@@ -63,14 +63,23 @@ class DatabasePipeline(object):
         return item
 
     def _clean(self, item):
+
+        # remove Nones
+        for key, value in item.items():
+            if not value:
+                del item[key]
+
         # json can't handle sets
-        item['languages'] = json.dumps(list(item['languages']))
+        for key, value in item.items():
+            if isinstance(value, set):
+                item[key] = json.dumps(list(value))
+
 
         # remove useless json serialization
         for key in ['homepage', 'formal_name', 'province', 'zip']:
             try:
                 item[key] = json.loads(item[key])
-            except ValueError:
+            except (ValueError, KeyError):
                 pass
 
         # some fields should be lists
@@ -79,8 +88,10 @@ class DatabasePipeline(object):
                 item_obj = json.loads(item[key])
             except ValueError:
                 print item['homepage'], ": could not decode", item[key], "as json"
+            except KeyError:
+                pass
             else:
-                if type(item_obj) == list:
+                if isinstance(item_obj, list):
                     continue
                 else:
                     item[key] = json.dumps([item_obj])
@@ -99,7 +110,8 @@ class DatabasePipeline(object):
             store = self.update_or_persist
 
         parsed_item = self.parse(item)
-        store(parsed_item)
+        # store(parsed_item)
+        print "disabled persisting items!!!"
 
     def parse(self, item):
         crawled_url = item['crawled_url']

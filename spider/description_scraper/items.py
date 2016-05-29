@@ -34,6 +34,9 @@ class Company(scrapy.Item):
     employees_max = scrapy.Field()
     funding = scrapy.Field()
 
+    # disk stored
+    body = scrapy.Field()
+
     # source
     pg_id = scrapy.Field()
     al_id = scrapy.Field()

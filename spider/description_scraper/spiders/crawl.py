@@ -119,7 +119,6 @@ class CrawlSpider(scrapy.Spider):
             yield scrapy.Request(link.url, callback=self.parse, meta=response.request.meta)
 
         item = Company()
-        import ipdb; ipdb.set_trace()
         item['formal_name'] = self.get_name(response)
         item['languages'] = self.get_languages(response)
 
@@ -228,43 +227,37 @@ class CrawlSpider(scrapy.Spider):
             response.meta['page_text'] = text
             return text
 
+    def match_company_types(self, text):
+        # piva_re = re.search("p\.{0,1}\s*iva\s*[0-9]+", match)
+        # piva = piva_re.group()
+        # code = int(re.search("[0-9]+", piva).group())
+        # match = match[:piva.start()] + match[piva.end():]
+        for company_type_regex in self.company_type_regexes:
+            name_match = re.search("[\s\w\-\!]+" + company_type_regex, text)
+            if name_match:
+                name = name_match.group()
+                return name
+
     def get_name(self, response):
-        name = None
         txt_arr = self.get_page_text(response)
         clean_txt = [re.sub(r'[^a-zA-Z0-9.\+\-]+', ' ', m) for m in txt_arr]
         # piva_matches = [txt for txt in txt_arr if re.search("p\.{0,1}\s*iva", txt) is not None]
-        for txt in clean_txt:
-            # piva_re = re.search("p\.{0,1}\s*iva\s*[0-9]+", match)
-            # piva = piva_re.group()
-            # code = int(re.search("[0-9]+", piva).group())
-            # match = match[:piva.start()] + match[piva.end():]
-            for company_type_regex in self.company_type_regexes:
-                name_match = re.search("[\s\w\-\!]+" + company_type_regex, txt)
-                if name_match:
-                    name = name_match.group()
-                    break
-            if name:
-                break
 
-        if not name:
+        company_type_matches = filter(None, [self.match_company_types(txt) for txt in clean_txt])
+        if len(company_type_matches) == 1:
+            return company_type_matches[0]
+        elif len(company_type_matches) > 0:
+            import ipdb; ipdb.set_trace()
+            print "TODO: try to chose a company time"
+            return company_type_matches[0]
+        else: # fallback
             try:
-                last_name = response.meta['old_db_entry']['common_name']
-            except Exception as e:
-                if "failed to find in html and no record present" not in self.ignoreBreakpoint:
+                name = response.meta['old_db_entry']['common_name']
+                assert name is not None
+                return name
+            except (KeyError, AssertionError) as e:
+                names =  response.xpath("//title/text()").extract()
+                if len(names) == 0:
                     import ipdb; ipdb.set_trace()
-                    print "failed to find in html and no record present", e
-            if last_name:
-                # check if the old name is valid
-                for company_type_regex in self.company_type_regexes:
-                    name_match = re.search("[\s\w\-\!]+" + company_type_regex, last_name)
-                    if name_match:
-                        name = name_match.group()
-                        break
-            if last_name and not name:
-                name = last_name
-            if not name:
-                if "failed to find in html and no record present" not in self.ignoreBreakpoint:
-                    import ipdb; ipdb.set_trace()
-                    print "last name is not present fallback to title"
-                name = response.xpath("//title/text()").extract()
-        return name
+                    print "found no names!"
+                return names[0]
