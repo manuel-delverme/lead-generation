@@ -1,0 +1,5 @@
+Scrapy 1.0.3 - no active project
+
+Unknown command: crawl
+
+Use "scrapy" to see available commands

@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 import scrapy
 #from items import CompaniesRA
-import json
-
+import os
+import urllib
 
 class ReportAziendeSpider(scrapy.Spider):
+
     name = "m.reportaziende.it"
     handle_httpstatus_list = [200]
     allowed_domains = ["reportaziende.it"]
     start_urls = [ "http://www.reportaziende.it/" ]
-    f = open('provolone', 'w')
 
     def parse_confronto(self, response):
-    	print response.url
+        f = open(urllib.pathname2url(response.url[7:]),"w")
+        f.write(response.body)
 
     def parse_dati(self, response):
-    	print response.url
+    	f = open(urllib.pathname2url(response.url[7:]),"w")
+        f.write(response.body)
 
     def parse_companies(self, response):
         ys = [2011,2013]
@@ -38,6 +40,8 @@ class ReportAziendeSpider(scrapy.Spider):
                 yield scrapy.Request(url, self.parse_companies)
 
     def parse(self, response):
+        if not os.path.isdir("./www.reportaziende.it/"):
+            os.mkdir("./www.reportaziende.it/")
         for trgt in response.xpath("///ul[@class='w_collegamenti']/li/a/@href").extract() :
             if trgt :
                 url = response.urljoin(trgt)
