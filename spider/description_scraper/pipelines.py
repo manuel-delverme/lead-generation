@@ -105,12 +105,14 @@ class DatabasePipeline(object):
 
     def process_item(self, item, spider):
         if item['depth'] == 0:
-            store = self.persist
+            store_to_db = self.persist
         else:
-            store = self.update_or_persist
+            store_to_db = self.update_or_persist
 
         parsed_item = self.parse(item)
-        # store(parsed_item)
+        import ipdb; ipdb.set_trace()
+        self.store_to_disk(parsed_item)
+        store_to_db(parsed_item)
         print "disabled persisting items!!!"
 
     def parse(self, item):
@@ -119,6 +121,9 @@ class DatabasePipeline(object):
         item = self._clean(item)
         print "added", crawled_url
         return item
+
+    def store_to_disk(self, item):
+        del item['body']
 
     def update_or_persist(self, item):
         try:

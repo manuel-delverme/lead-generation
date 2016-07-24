@@ -14,6 +14,7 @@ import scrapy.utils.url
 from scrapy.linkextractors import LinkExtractor
 from bs4 import BeautifulSoup
 from description_scraper.items import Company
+import nltk
 
 
 class OutOfUrls(Exception):
@@ -36,6 +37,34 @@ class CrawlSpider(scrapy.Spider):
                 regex_str += letter
                 regex_str += "[\.\s]*"
             self.company_type_regexes.append(regex_str)
+        self.cached_stopwords = dict()
+
+    def clean_stopwords(self, text, languages):
+        stopwords = set()
+
+        language_map = {
+            'it': 'italian',
+            'en': 'english',
+            'de': 'german'
+        }
+        try:
+            languages = [language_map[l] for l in languages]
+        except KeyError:
+            import ipdb; ipdb.set_trace()
+            print "language not mapped yet"
+
+        for language in languages:
+            try:
+                stopwords.update(self.cached_stopwords[language])
+            except KeyError:
+                self.cached_stopwords[language] = set(nltk.corpus.stopwords.words(language))
+                stopwords.update(self.cached_stopwords[language])
+
+        text = text.lower()
+        # tokens = RegexpTokenizer(r'\w+').tokenize(text)
+        tokens = nltk.word_tokenize(text)
+        filtered_words = filter(lambda token: token not in stopwords, tokens)
+	return ' '.join(filtered_words)
 
     def clean_urls(self, dirty_urls):
         def remove_serialization(url):
@@ -62,14 +91,12 @@ class CrawlSpider(scrapy.Spider):
                 pass
             else:
                 if "entry_urls is fucked up" not in self.ignoreBreakpoint:
-                    import ipdb
-                    ipdb.set_trace()
+                    import ipdb; ipdb.set_trace()
                     print "entry_urls is fucked up"
 
         if entry_urls is None:
             if "entry_urls is None" not in self.ignoreBreakpoint:
-                import ipdb
-                ipdb.set_trace()
+                import ipdb; ipdb.set_trace()
                 print "entry_urls is None"
 
         entry_urls = [remove_serialization(url) for url in entry_urls]
@@ -119,8 +146,8 @@ class CrawlSpider(scrapy.Spider):
             yield scrapy.Request(link.url, callback=self.parse, meta=response.request.meta)
 
         item = Company()
-        item['formal_name'] = self.get_name(response)
         item['languages'] = self.get_languages(response)
+        item['formal_name'] = self.get_name(response, item['languages'])
 
         item['peer_companies'] = self.peer_companies(response)
         item['crawled_url'] = response.url
@@ -172,7 +199,10 @@ class CrawlSpider(scrapy.Spider):
         domain = extraction.domain
         # TODO: check DNS
         tld_domains = [domain + "." + tld for tld in self.all_tld_domains(response)[0]]
-        tld_domains.remove(extraction.registered_domain)
+        try:
+            tld_domains.remove(extraction.registered_domain)
+        except ValueError:
+            pass
         return tld_domains
 
     def all_tld_domains(self, response):
@@ -227,28 +257,26 @@ class CrawlSpider(scrapy.Spider):
             response.meta['page_text'] = text
             return text
 
-    def match_company_types(self, text):
+    def match_company_types(self, text, languages):
         # piva_re = re.search("p\.{0,1}\s*iva\s*[0-9]+", match)
         # piva = piva_re.group()
         # code = int(re.search("[0-9]+", piva).group())
         # match = match[:piva.start()] + match[piva.end():]
+        # text = self.clean_stopwords(text, languages)
         for company_type_regex in self.company_type_regexes:
-            name_match = re.search("[\s\w\-\!]+" + company_type_regex, text)
+            # get everything before the company_type
+            name_match = re.search("[\s\w\,\.]+" + company_type_regex + "[\.\s\b]", text)
             if name_match:
                 name = name_match.group()
                 return name
 
-    def get_name(self, response):
+    def get_name(self, response, languages):
         txt_arr = self.get_page_text(response)
-        clean_txt = [re.sub(r'[^a-zA-Z0-9.\+\-]+', ' ', m) for m in txt_arr]
+        clean_txt = {re.sub(r'[^a-zA-Z0-9.\+\-]+', ' ', m) for m in txt_arr}
         # piva_matches = [txt for txt in txt_arr if re.search("p\.{0,1}\s*iva", txt) is not None]
 
-        company_type_matches = filter(None, [self.match_company_types(txt) for txt in clean_txt])
+        company_type_matches = filter(None, [self.match_company_types(txt, languages) for txt in clean_txt])
         if len(company_type_matches) == 1:
-            return company_type_matches[0]
-        elif len(company_type_matches) > 0:
-            import ipdb; ipdb.set_trace()
-            print "TODO: try to chose a company time"
             return company_type_matches[0]
         else: # fallback
             try:
@@ -257,7 +285,8 @@ class CrawlSpider(scrapy.Spider):
                 return name
             except (KeyError, AssertionError) as e:
                 names =  response.xpath("//title/text()").extract()
-                if len(names) == 0:
-                    import ipdb; ipdb.set_trace()
-                    print "found no names!"
-                return names[0]
+                if len(names) > 0:
+                    return names[0]
+                else:
+                    extraction = tldextract.extract(response.url)
+                    return extraction.domain

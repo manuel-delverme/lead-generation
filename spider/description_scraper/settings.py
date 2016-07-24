@@ -21,7 +21,7 @@ USER_AGENT = "Googlebot/2.1 ( http://www.google.com/bot.html)"
 
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 30
+CONCURRENT_REQUESTS = 1 # 30
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
@@ -94,8 +94,8 @@ AUTOTHROTTLE_MAX_DELAY = 60
 DOWNLOAD_HANDLERS = {'s3': None}
 # DUPEFILTER_DEBUG = True
 TOR_PASSWORD = "howdoicake?"
-LOG_LEVEL = "INFO"
-LOG_FILE = "/tmp/scrapy.log"
+# LOG_LEVEL = "INFO"
+# LOG_FILE = "/tmp/scrapy.log"
 
 DATABASE = {
     'drivername': 'postgres',
